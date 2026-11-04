@@ -1,14 +1,14 @@
 {
   "_doc": "App Store Connect に API で入れる情報（.github/workflows/asc.yml の metadata が読む）。文字数：name・subtitle 30、keywords 100（カンマ区切り）、promotionalText 170、description 4000。カテゴリの ID は EDUCATION・PRODUCTIVITY・UTILITIES・LIFESTYLE・HEALTH_AND_FITNESS など。審査への提出と App プライバシーの申告は本人が行う。",
   "locale": "ja",
-  "name": "",
-  "subtitle": "",
-  "primaryCategory": "",
-  "secondaryCategory": "",
+  "name": "じぶん実験室 - くじで確かめる習慣",
+  "subtitle": "自分に効く習慣を14日で確かめる",
+  "primaryCategory": "LIFESTYLE",
+  "secondaryCategory": "PRODUCTIVITY",
   "supportUrl": "https://github.com/enludus-daily/app-20261104-self-lab/issues",
   "privacyPolicyUrl": "https://github.com/enludus-daily/app-20261104-self-lab/blob/main/PRIVACY.md",
-  "keywords": "",
-  "promotionalText": "",
-  "description": "",
-  "whatToTest": ""
+  "keywords": "習慣,実験,セルフ実験,記録,睡眠,集中,朝活,ルーティン,振り返り,ライフハック,データ,比較,続ける",
+  "promotionalText": "「スマホを置くと朝がすっきりする気がする」を、くじで確かめる。やる日・やすむ日を毎朝くじで決めて、夜に1タップ。14日後に、あなたに効いたかが分かります。",
+  "description": "「朝スマホを見ないと調子がいい気がする」「昼に歩くと午後がはかどる気がする」——その「気がする」を、くじで確かめるアプリです。\n\n■ 使い方\n1. 気になることを書くと、Apple Intelligence が試せる実験の形を3つ考えます（対応していない iPhone では、組み込みの12の型から選べます）。\n2. 毎朝くじを引きます。「やる日」と「やすむ日」が半分ずつ、順番はくじで決まります。くじは当日まで秘密です。\n3. 夜に1つの質問（例：けさの目覚めはどうだった？）に1〜5で答えます。\n4. 8日または14日後、やる日とやすむ日の平均を比べて「効いていそう」「はっきりした差はない」「逆効果かも」を、偶然でもその差が出る確率と一緒に言葉で示します。\n\n■ 思い込みではなく、比べて分かる\nただ続けた日を数えるのではなく、くじで割り付けた日どうしを比べます。調子のいい日にだけ続けてしまう、といった偏りを減らせます。くじのとおりにできなかった日は、正直に残せば比べるのから外します。\n\n■ 毎日ひらく理由\n・毎朝のくじ\n・続けて記録した日数\n・効いた実験は「あなたに効くこと」に積み上がります\n\n■ iPhone Duo の大きな画面で\n内側の画面では、今日のくじと、日ごとの記録・結果のグラフを並べて見られます。閉じた外側の画面では、くじと記録だけをすばやく。\n\n■ プライバシー\nデータはすべて iPhone の中だけに保存します。アカウント・通信・広告・解析はありません。Apple Intelligence も端末の中のモデルだけを使います。\n\n※ 医療の判断には使わないでください。体調に関わることは医師に相談してください。",
+  "whatToTest": "1. 最初の画面の「今日のくじを引く」を押し、やる日かやすむ日かが出ること。\n2. 「夜に記録する」で1〜5を選んで記録し、続けた日数とマス目が増えること。\n3. 一覧の見本「寝る 1 時間前にスマホを置く」を開き、グラフと「効いていそう」の結果が出ること。\n4. ＋から気になることを書き、Apple Intelligence の対応機では案が3つ出ること（非対応の機種では型が出ること）。案を選んで「今日から始める」。\n5. iPhone Duo では、開いた内側の画面で一覧と結果が並ぶこと。"
 }

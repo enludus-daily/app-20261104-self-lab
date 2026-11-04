@@ -48,7 +48,8 @@ final class ExperimentStore {
             lowLabel: cleaned.lowLabel, highLabel: cleaned.highLabel, reason: cleaned.reason,
             startDate: calendar.startOfDay(for: now),
             duration: Experiment.durations.contains(duration) ? duration : Experiment.defaultDuration,
-            seed: seed
+            seed: seed,
+            nextMorning: cleaned.nextMorning
         )
         experiments.append(experiment)
         save()
@@ -69,7 +70,7 @@ final class ExperimentStore {
     func record(id: UUID, day: Int, rating: Int, followed: Bool, note: String = "", now: Date = .now) -> Bool {
         guard let index = experiments.firstIndex(where: { $0.id == id }) else { return false }
         let experiment = experiments[index]
-        guard (0..<experiment.duration).contains(day), day <= experiment.dayIndex(on: now, calendar: calendar),
+        guard (0..<experiment.duration).contains(day), day <= experiment.dayIndex(on: now, calendar: calendar) - experiment.recordLag,
               Experiment.ratingRange.contains(rating), !experiment.endedEarly else { return false }
         let checkIn = CheckIn(
             day: day, rating: rating, followed: followed,
@@ -93,9 +94,11 @@ final class ExperimentStore {
         save()
     }
 
-    /// 記録した日（実験の何日目かを日付にしたもの）
+    /// 記録した日（翌朝に記録する実験は、その翌日）
     var recordedDates: [Date] {
-        experiments.flatMap { experiment in experiment.checkIns.map { experiment.date(ofDay: $0.day, calendar: calendar) } }
+        experiments.flatMap { experiment in
+            experiment.checkIns.map { experiment.date(ofDay: $0.day + experiment.recordLag, calendar: calendar) }
+        }
     }
 
     func streak(now: Date = .now) -> Int {
@@ -130,7 +133,7 @@ enum Samples {
             title: phone.title, action: phone.action, question: phone.question,
             lowLabel: phone.lowLabel, highLabel: phone.highLabel, reason: phone.reason,
             startDate: calendar.date(byAdding: .day, value: -18, to: today) ?? today,
-            duration: 14, seed: finishedSeed, isSample: true
+            duration: 14, seed: finishedSeed, isSample: true, nextMorning: phone.nextMorning
         )
         let doValues = [4, 5, 4, 4, 3, 5, 4]
         let restValues = [3, 2, 3, 2, 4, 3, 2]
@@ -148,7 +151,7 @@ enum Samples {
             }
             // 1 日だけ、くじのとおりにできなかった日を入れる
             let followed = day != 9
-            let recordedAt = calendar.date(byAdding: .hour, value: 22, to: finished.date(ofDay: day, calendar: calendar)) ?? today
+            let recordedAt = calendar.date(byAdding: .hour, value: 31, to: finished.date(ofDay: day, calendar: calendar)) ?? today
             finished.checkIns.append(CheckIn(day: day, rating: rating, followed: followed, note: "", recordedAt: recordedAt))
             finished.revealedDays.append(day)
         }
@@ -158,13 +161,16 @@ enum Samples {
             title: coffee.title, action: coffee.action, question: coffee.question,
             lowLabel: coffee.lowLabel, highLabel: coffee.highLabel, reason: coffee.reason,
             startDate: calendar.date(byAdding: .day, value: -3, to: today) ?? today,
-            duration: 14, seed: activeSeed, isSample: true
+            duration: 14, seed: activeSeed, isSample: true, nextMorning: coffee.nextMorning
         )
+        // 3 日目までくじを引き、2 日目までの朝に記録した。3 日目の分（けさの記録）と、今日のくじが残っている
         for day in 0..<3 {
-            let rating = active.arm(day: day) == .doIt ? 4 : 3
-            let recordedAt = calendar.date(byAdding: .hour, value: 22, to: active.date(ofDay: day, calendar: calendar)) ?? today
-            active.checkIns.append(CheckIn(day: day, rating: rating, followed: true, note: "", recordedAt: recordedAt))
             active.revealedDays.append(day)
+        }
+        for day in 0..<2 {
+            let rating = active.arm(day: day) == .doIt ? 4 : 3
+            let recordedAt = calendar.date(byAdding: .hour, value: 31, to: active.date(ofDay: day, calendar: calendar)) ?? today
+            active.checkIns.append(CheckIn(day: day, rating: rating, followed: true, note: "", recordedAt: recordedAt))
         }
         return [finished, active]
     }

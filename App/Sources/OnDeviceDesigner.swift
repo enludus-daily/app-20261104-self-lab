@@ -35,14 +35,16 @@ struct OnDeviceDesigner: ExperimentDesigner {
             利用者が書いた気になることに対して、14 日間、日ごとにくじで「やる日」と「やすむ日」を決めて比べられる実験を 3 つ考えてください。
             - やることは、1 日で済む、安全で、だれでもできる小さな行動にする（例：寝る前にスマホを置く、昼食後に歩く）。
             - 薬・サプリメント・食事制限・断食・医療に関わることは出さない。
-            - 夜に聞く質問は、1〜5 で答えられ、大きいほどよい向きにする。
+            - 質問は、1〜5 で答えられ、大きいほどよい向きにする。ふつうはその日の夜に答える。
+            - 効果が翌朝に分かるもの（寝る前の習慣と、けさの目覚め など）は、翌朝に答える質問にし、answerNextMorning を true にする。
             - すべて自然な日本語で、短く書く。
             """)
         let response = try await session.respond(to: "気になること：\(input)", generating: GeneratedPlans.self)
         let drafts = response.content.plans.map {
             ExperimentDraft(
                 title: $0.title, action: $0.action, question: $0.question,
-                lowLabel: $0.lowLabel, highLabel: $0.highLabel, reason: $0.reason, source: .model
+                lowLabel: $0.lowLabel, highLabel: $0.highLabel, reason: $0.reason, source: .model,
+                nextMorning: $0.answerNextMorning
             )
         }
         let cleaned = DraftCleaner.cleanAll(drafts)
@@ -76,4 +78,7 @@ struct GeneratedPlan {
 
     @Guide(description: "なぜ効くかもしれないか、一文で")
     var reason: String
+
+    @Guide(description: "効果が翌朝に分かり、質問に翌朝答えるなら true")
+    var answerNextMorning: Bool
 }

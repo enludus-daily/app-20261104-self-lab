@@ -29,7 +29,7 @@ struct CheckInSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     HStack {
-                        Text("\(day + 1) 日目").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(experiment.nextMorning ? "\(day + 1) 日目の翌朝" : "\(day + 1) 日目").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                         ArmBadge(arm: arm)
                     }
                     Text(experiment.question)

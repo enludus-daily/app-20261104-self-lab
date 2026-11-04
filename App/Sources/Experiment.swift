@@ -51,6 +51,11 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
     var revealedDays: [Int] = []
     var endedEarly = false
     var isSample = false
+    /// 効果が翌朝に分かる実験（例：寝る前の習慣 → けさの目覚め）。その日の分は翌朝に記録する
+    var nextMorning = false
+
+    /// 記録が何日ずれるか（翌朝に記録する実験は 1）
+    var recordLag: Int { nextMorning ? 1 : 0 }
 
     var schedule: [Arm] { Scheduler.schedule(days: duration, seed: seed) }
 
@@ -77,7 +82,7 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
 
     /// 終わったか（期間が過ぎた・全部の日を記録した・途中でやめた）
     func isFinished(on date: Date, calendar: Calendar) -> Bool {
-        endedEarly || dayIndex(on: date, calendar: calendar) >= duration || Set(checkIns.map(\.day)).count >= duration
+        endedEarly || dayIndex(on: date, calendar: calendar) >= duration + recordLag || Set(checkIns.map(\.day)).count >= duration
     }
 
     /// 今日が何日目か（期間の外なら nil）
@@ -86,10 +91,10 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
         return (0..<duration).contains(index) ? index : nil
     }
 
-    /// まだ記録していない、記録できる日（今日まで・期間の中）。新しい順
+    /// まだ記録していない、記録できる日（期間の中。翌朝に記録する実験は昨日まで）。新しい順
     func pendingDays(on date: Date, calendar: Calendar) -> [Int] {
         guard !endedEarly else { return [] }
-        let last = min(dayIndex(on: date, calendar: calendar), duration - 1)
+        let last = min(dayIndex(on: date, calendar: calendar) - recordLag, duration - 1)
         guard last >= 0 else { return [] }
         let recorded = Set(checkIns.map(\.day))
         return (0...last).reversed().filter { !recorded.contains($0) }
@@ -108,10 +113,12 @@ struct ExperimentDraft: Equatable, Identifiable, Sendable {
     var highLabel: String
     var reason: String
     var source: Source
+    var nextMorning = false
 
     static func == (lhs: ExperimentDraft, rhs: ExperimentDraft) -> Bool {
         lhs.title == rhs.title && lhs.action == rhs.action && lhs.question == rhs.question
             && lhs.lowLabel == rhs.lowLabel && lhs.highLabel == rhs.highLabel && lhs.reason == rhs.reason && lhs.source == rhs.source
+            && lhs.nextMorning == rhs.nextMorning
     }
 
     static let empty = ExperimentDraft(title: "", action: "", question: "", lowLabel: "", highLabel: "", reason: "", source: .manual)

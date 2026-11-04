@@ -98,12 +98,16 @@ struct TodayCard: View {
                 .frame(maxWidth: 220)
 
             if let pendingEarlier {
-                Button {
-                    onRecord(pendingEarlier)
-                } label: {
-                    Label("\(pendingEarlier + 1) 日目の分がまだです。記録する", systemImage: "clock.arrow.circlepath")
+                if experiment.nextMorning, let today, pendingEarlier == today - 1 {
+                    morningRecord(day: pendingEarlier)
+                } else {
+                    Button {
+                        onRecord(pendingEarlier)
+                    } label: {
+                        Label("\(pendingEarlier + 1) 日目の分がまだです。記録する", systemImage: "clock.arrow.circlepath")
+                    }
+                    .buttonStyle(SoftButtonStyle(tint: Theme.rose))
                 }
-                .buttonStyle(SoftButtonStyle(tint: Theme.rose))
             }
         }
         .card()
@@ -116,10 +120,14 @@ struct TodayCard: View {
                 Text("今日は").font(.title3.weight(.semibold))
                 ArmBadge(arm: arm, large: true)
             }
-            Text(arm == .doIt ? experiment.action : "いつもどおりに過ごす（「\(experiment.action)」はしない）")
+            Text(arm == .doIt ? experiment.action : "きょうはお休み。いつもどおりに過ごします。")
                 .font(.body)
                 .fixedSize(horizontal: false, vertical: true)
-            if let checkIn = experiment.checkIn(day: day) {
+            if experiment.nextMorning {
+                Label("明日の朝に「\(experiment.question)」を記録します", systemImage: "sunrise.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else if let checkIn = experiment.checkIn(day: day) {
                 HStack {
                     Label("記録しました", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(Theme.teal)
@@ -130,11 +138,13 @@ struct TodayCard: View {
                         .buttonStyle(SoftButtonStyle())
                 }
             } else {
+                Text(experiment.question)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 Button {
                     onRecord(day)
                 } label: {
-                    Label("夜に記録する：\(experiment.question)", systemImage: "moon.stars.fill")
-                        .multilineTextAlignment(.leading)
+                    Label("夜に記録する", systemImage: "moon.stars.fill")
                 }
                 .buttonStyle(BrandButtonStyle(fill: AnyShapeStyle(Theme.color(for: arm))))
             }
@@ -142,6 +152,29 @@ struct TodayCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.color(for: arm).opacity(0.1)))
+    }
+
+    /// 翌朝に記録する実験の、けさの記録
+    private func morningRecord(day: Int) -> some View {
+        let arm = experiment.arm(day: day) ?? .doIt
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "sunrise.fill").foregroundStyle(Theme.amber)
+                Text("けさの記録").font(.subheadline.weight(.bold))
+                Text("きのうは").font(.caption).foregroundStyle(.secondary)
+                ArmBadge(arm: arm)
+            }
+            Text(experiment.question).font(.headline)
+            Button {
+                onRecord(day)
+            } label: {
+                Label("記録する", systemImage: "square.and.pencil")
+            }
+            .buttonStyle(BrandButtonStyle(fill: AnyShapeStyle(Theme.color(for: arm))))
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.amber.opacity(0.12)))
     }
 }
 

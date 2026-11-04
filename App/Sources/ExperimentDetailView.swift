@@ -71,7 +71,8 @@ struct ExperimentDetailView: View {
                 }
             }
             Label(experiment.action, systemImage: "bolt.fill").foregroundStyle(Theme.teal)
-            Label(experiment.question, systemImage: "moon.stars.fill").foregroundStyle(Theme.violet)
+            Label(experiment.question + (experiment.nextMorning ? "（翌朝に記録）" : ""), systemImage: experiment.nextMorning ? "sunrise.fill" : "moon.stars.fill")
+                .foregroundStyle(Theme.violet)
             if !experiment.reason.isEmpty {
                 Text(experiment.reason).font(.footnote).foregroundStyle(.secondary)
             }
@@ -154,6 +155,12 @@ struct ExperimentDetailView: View {
         .card()
     }
 
+    private func recordLabel(_ experiment: Experiment, day: Int, today: Int?) -> String {
+        if experiment.nextMorning, let today, day == today - 1 { return "けさの記録をする" }
+        if day == today { return "今日の分を記録する" }
+        return "\(day + 1) 日目の分を記録する"
+    }
+
     /// 同じ値の点が重ならないよう、少しずらす
     private func jitter(_ index: Int) -> Double {
         Double((index % 5) - 2) * 0.06
@@ -175,7 +182,7 @@ struct ExperimentDetailView: View {
                 Button {
                     onRecord(day)
                 } label: {
-                    Label(day == today ? "今日の分を記録する" : "\(day + 1) 日目の分を記録する", systemImage: "moon.stars.fill")
+                    Label(recordLabel(experiment, day: day, today: today), systemImage: experiment.nextMorning ? "sunrise.fill" : "moon.stars.fill")
                 }
                 .buttonStyle(BrandButtonStyle())
             }

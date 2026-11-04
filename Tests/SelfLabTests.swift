@@ -144,6 +144,17 @@ struct ExperimentDayTests {
         #expect(e.pendingDays(on: day(20), calendar: tokyo).first == 7)
     }
 
+    @Test func nextMorningRecordsTheDayAfter() {
+        var e = experiment()
+        e.nextMorning = true
+        #expect(e.pendingDays(on: day(1), calendar: tokyo).isEmpty)
+        #expect(e.pendingDays(on: day(2), calendar: tokyo) == [0])
+        // 最後の日の分は、期間の次の朝に記録する
+        #expect(!e.isFinished(on: day(9), calendar: tokyo))
+        #expect(e.pendingDays(on: day(9), calendar: tokyo).first == 7)
+        #expect(e.isFinished(on: day(10), calendar: tokyo))
+    }
+
     @Test func futureDaysStayHidden() {
         let e = experiment()
         #expect(!e.isRevealed(day: 3))
@@ -229,7 +240,10 @@ struct StoreTests {
         let active = store.active(now: day(4))[0]
         #expect(active.today(on: day(4), calendar: tokyo) == 3)
         #expect(!active.isRevealed(day: 3))
-        #expect(store.streak(now: day(4)) == 3)
+        // 翌朝に記録する見本：きのう（3 日目）の分を、けさ記録できる
+        #expect(active.nextMorning)
+        #expect(active.pendingDays(on: day(4), calendar: tokyo) == [2])
+        #expect(store.streak(now: day(4)) == 2)
     }
 
     @Test func startRecordAndReveal() throws {
@@ -252,6 +266,16 @@ struct StoreTests {
         #expect(!store.record(id: id, day: 1, rating: 3, followed: true, now: day(4)))
         #expect(!store.record(id: id, day: 0, rating: 6, followed: true, now: day(4)))
         #expect(!store.record(id: id, day: 0, rating: 0, followed: true, now: day(4)))
+    }
+
+    @Test func nextMorningCannotRecordTodayYet() throws {
+        let store = makeStore()
+        var morning = draft()
+        morning.nextMorning = true
+        let id = try #require(store.start(morning, duration: 8, now: day(4), seed: 5))
+        #expect(!store.record(id: id, day: 0, rating: 3, followed: true, now: day(4, hour: 22)))
+        #expect(store.record(id: id, day: 0, rating: 3, followed: true, now: day(5, hour: 7)))
+        #expect(store.streak(now: day(5)) == 1)
     }
 
     @Test func unknownDurationFallsBackToDefault() throws {

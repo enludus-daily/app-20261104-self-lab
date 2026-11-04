@@ -37,9 +37,13 @@ struct ExperimentTemplate: Sendable {
     var reason: String
     var symbol: String
     var keywords: [String]
+    var nextMorning = false
 
     var draft: ExperimentDraft {
-        ExperimentDraft(title: title, action: action, question: question, lowLabel: lowLabel, highLabel: highLabel, reason: reason, source: .template)
+        ExperimentDraft(
+            title: title, action: action, question: question, lowLabel: lowLabel, highLabel: highLabel,
+            reason: reason, source: .template, nextMorning: nextMorning
+        )
     }
 }
 
@@ -49,13 +53,15 @@ enum TemplateLibrary {
             title: "寝る 1 時間前にスマホを置く", action: "寝る 1 時間前にスマホを別の部屋に置く",
             question: "けさの目覚めはどうだった？", lowLabel: "重い", highLabel: "すっきり",
             reason: "画面と通知から離れると、寝る前に頭が静まりやすいと言われます。自分にも当てはまるか確かめます。",
-            symbol: "iphone.slash", keywords: ["眠", "寝", "朝", "目覚め", "スマホ", "夜更かし", "起き"]
+            symbol: "iphone.slash", keywords: ["眠", "寝", "朝", "目覚め", "スマホ", "夜更かし", "起き"],
+            nextMorning: true
         ),
         ExperimentTemplate(
             title: "午後 2 時からコーヒーをやめる", action: "午後 2 時を過ぎたらコーヒー・緑茶・エナジードリンクを飲まない",
             question: "ゆうべの寝つきはどうだった？", lowLabel: "なかなか", highLabel: "すぐ眠れた",
             reason: "カフェインは数時間残ります。午後に飲む量が、自分の寝つきに響いているかを見ます。",
-            symbol: "cup.and.saucer", keywords: ["寝つき", "眠れ", "コーヒー", "カフェイン", "夜", "寝"]
+            symbol: "cup.and.saucer", keywords: ["寝つき", "眠れ", "コーヒー", "カフェイン", "夜", "寝"],
+            nextMorning: true
         ),
         ExperimentTemplate(
             title: "朝 5 分、外の光を浴びる", action: "起きて 1 時間以内に 5 分、外に出るか窓辺に立つ",

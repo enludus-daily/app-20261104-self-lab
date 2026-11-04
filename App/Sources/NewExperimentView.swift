@@ -14,11 +14,11 @@ struct NewExperimentView: View {
     @State private var isThinking = false
     @State private var notice: String?
 
-    init(designer: any ExperimentDesigner, seed: NewExperimentSeed?, onStart: @escaping (ExperimentDraft, Int) -> Void) {
+    init(designer: any ExperimentDesigner, seed: NewExperimentSeed, onStart: @escaping (ExperimentDraft, Int) -> Void) {
         self.designer = designer
         self.onStart = onStart
-        _worry = State(initialValue: seed?.worry ?? "")
-        _suggestions = State(initialValue: seed?.suggestions ?? [])
+        _worry = State(initialValue: seed.worry)
+        _suggestions = State(initialValue: seed.suggestions)
     }
 
     var body: some View {
@@ -165,7 +165,7 @@ struct SuggestionCard: View {
                 Label(draft.action, systemImage: "bolt.fill")
                     .font(.subheadline)
                     .foregroundStyle(Theme.teal)
-                Label(draft.question, systemImage: "moon.stars.fill")
+                Label(draft.question + (draft.nextMorning ? "（翌朝）" : ""), systemImage: draft.nextMorning ? "sunrise.fill" : "moon.stars.fill")
                     .font(.subheadline)
                     .foregroundStyle(Theme.violet)
                 if !draft.reason.isEmpty {
@@ -200,7 +200,10 @@ struct DraftEditor: View {
             Text("この形で始める").font(.headline)
             field("題", text: $draft.title, prompt: "例：昼食のあと 10 分歩く")
             field("やる日にすること", text: $draft.action, prompt: "例：昼食を食べ終えたら 10 分歩く")
-            field("夜に聞くこと（大きいほどよい）", text: $draft.question, prompt: "例：きょうの午後の集中は？")
+            field("自分に聞くこと（大きいほどよい）", text: $draft.question, prompt: "例：きょうの午後の集中は？")
+            Toggle("効果は翌朝に分かる（翌朝に記録する）", isOn: $draft.nextMorning)
+                .font(.subheadline)
+                .tint(Theme.teal)
             HStack {
                 field("1 のとき", text: $draft.lowLabel, prompt: "わるい")
                 field("5 のとき", text: $draft.highLabel, prompt: "よい")

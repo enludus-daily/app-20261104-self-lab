@@ -10,8 +10,7 @@ struct ContentView: View {
 
     @State private var selection: UUID?
     @State private var checkIn: CheckInRequest?
-    @State private var showingNew = false
-    @State private var newSeed: NewExperimentSeed?
+    @State private var newRequest: NewExperimentSeed?
     @State private var revealCount = 0
     @State private var handledScene = false
 
@@ -44,7 +43,7 @@ struct ContentView: View {
                         )
                     }
                     if active.isEmpty {
-                        StartCard { showingNew = true }
+                        StartCard { newRequest = NewExperimentSeed() }
                     }
                 } header: {
                     sectionHeader(active.isEmpty ? "実験" : "今日のくじ")
@@ -72,7 +71,7 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        showingNew = true
+                        newRequest = NewExperimentSeed()
                     } label: {
                         Label("実験を作る", systemImage: "plus")
                     }
@@ -86,7 +85,7 @@ struct ContentView: View {
                 } onDeleted: {
                     selection = nil
                 } onNext: {
-                    showingNew = true
+                    newRequest = NewExperimentSeed()
                 }
             } else {
                 ContentUnavailableView(
@@ -105,8 +104,8 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingNew, onDismiss: { newSeed = nil }) {
-            NewExperimentView(designer: designer, seed: newSeed) { draft, duration in
+        .sheet(item: $newRequest) { request in
+            NewExperimentView(designer: designer, seed: request) { draft, duration in
                 store.start(draft, duration: duration)
             }
         }
@@ -129,14 +128,12 @@ struct ContentView: View {
         case .detail:
             selection = store.finished(now: now).first?.id
         case .checkin:
-            if let experiment = store.active(now: now).first, let today = experiment.today(on: now, calendar: store.calendar) {
-                store.reveal(id: experiment.id, day: today)
-                checkIn = CheckInRequest(experimentID: experiment.id, day: today)
+            if let experiment = store.active(now: now).first, let day = experiment.pendingDays(on: now, calendar: store.calendar).first {
+                checkIn = CheckInRequest(experimentID: experiment.id, day: day)
             }
         case .compose:
             let worry = "午後になると眠くて、仕事に集中できない"
-            newSeed = NewExperimentSeed(worry: worry, suggestions: TemplateLibrary.suggestions(for: worry))
-            showingNew = true
+            newRequest = NewExperimentSeed(worry: worry, suggestions: TemplateLibrary.suggestions(for: worry))
         case .reveal:
             if let experiment = store.active(now: now).first, let today = experiment.today(on: now, calendar: store.calendar) {
                 store.reveal(id: experiment.id, day: today)
@@ -171,7 +168,8 @@ struct CheckInRequest: Identifiable {
 }
 
 /// 実験を作る画面を、気になることと案を入れた状態で開く（スクリーンショット用）
-struct NewExperimentSeed {
-    var worry: String
-    var suggestions: [ExperimentDraft]
+struct NewExperimentSeed: Identifiable {
+    let id = UUID()
+    var worry = ""
+    var suggestions: [ExperimentDraft] = []
 }
