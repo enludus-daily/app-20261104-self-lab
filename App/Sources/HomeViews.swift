@@ -77,6 +77,10 @@ struct TodayCard: View {
                 .buttonStyle(SoftButtonStyle(tint: Theme.violet))
             }
 
+            if let pendingEarlier, isMorningRecord(pendingEarlier) {
+                morningRecord(day: pendingEarlier)
+            }
+
             if let today, let arm = experiment.arm(day: today) {
                 if experiment.isRevealed(day: today) {
                     revealed(arm: arm, day: today)
@@ -97,17 +101,13 @@ struct TodayCard: View {
             DayGrid(experiment: experiment, today: today, compact: true)
                 .frame(maxWidth: 220)
 
-            if let pendingEarlier {
-                if experiment.nextMorning, let today, pendingEarlier == today - 1 {
-                    morningRecord(day: pendingEarlier)
-                } else {
-                    Button {
-                        onRecord(pendingEarlier)
-                    } label: {
-                        Label("\(pendingEarlier + 1) 日目の分がまだです。記録する", systemImage: "clock.arrow.circlepath")
-                    }
-                    .buttonStyle(SoftButtonStyle(tint: Theme.rose))
+            if let pendingEarlier, !isMorningRecord(pendingEarlier) {
+                Button {
+                    onRecord(pendingEarlier)
+                } label: {
+                    Label("\(pendingEarlier + 1) 日目の分がまだです。記録する", systemImage: "clock.arrow.circlepath")
                 }
+                .buttonStyle(SoftButtonStyle(tint: Theme.rose))
             }
         }
         .card()
@@ -152,6 +152,12 @@ struct TodayCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.color(for: arm).opacity(0.1)))
+    }
+
+    /// きのうの分を、けさ記録する場面か
+    private func isMorningRecord(_ day: Int) -> Bool {
+        guard experiment.nextMorning, let today else { return false }
+        return day == today - 1
     }
 
     /// 翌朝に記録する実験の、けさの記録

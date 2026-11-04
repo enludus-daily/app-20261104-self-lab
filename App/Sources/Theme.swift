@@ -92,6 +92,8 @@ struct ArmBadge: View {
         Label(arm.title, systemImage: Theme.symbol(for: arm))
             .font(large ? .title2.weight(.heavy) : .caption.weight(.bold))
             .foregroundStyle(.white)
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, large ? 16 : 8)
             .padding(.vertical, large ? 8 : 4)
             .background(Capsule().fill(Theme.color(for: arm)))
