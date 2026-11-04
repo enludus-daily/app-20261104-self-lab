@@ -6,8 +6,8 @@
 |---|---|
 | Bundle ID | com.enludus.daily.___ |
 | アプリ名 | （毎日のセッションが決める。本人の許可 2026-11-04） |
-| サポート URL | https://github.com/enludus-daily/__REPO__/issues |
-| プライバシーポリシー URL | https://github.com/enludus-daily/__REPO__/blob/main/PRIVACY.md |
+| サポート URL | https://github.com/enludus-daily/app-20261104-self-lab/issues |
+| プライバシーポリシー URL | https://github.com/enludus-daily/app-20261104-self-lab/blob/main/PRIVACY.md |
 | 年齢区分の答え | （暴力・ギャンブル・Web 閲覧・生成 AI などの有無。API では入れないので本人が入力） |
 | 輸出コンプライアンス | `ITSAppUsesNonExemptEncryption = NO`（標準の暗号だけ。ビルドの答えは asc が NO で入れる） |
 

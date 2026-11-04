@@ -1,36 +1,31 @@
-# daily-app-template
+# じぶん実験室
 
-enludus-daily で毎日作る iOS アプリ（SwiftUI）のテンプレート。テンプレートから作ったリポジトリでは、この README をそのアプリの説明に書き換える。
+「朝スマホを見ないと調子がいい気がする」——その「気がする」を、くじで確かめる iOS アプリ（SwiftUI、iOS 26 以降）。
 
-## 中身
+## 何を
 
-| パス | 役割 |
-|---|---|
-| `project.yml` | XcodeGen の spec。`.xcodeproj` はコミットしない |
-| `App/Sources/`, `Tests/` | ひな形のアプリとテスト（Swift Testing） |
-| `App/Resources/` | アイコン、アクセントカラー、`PrivacyInfo.xcprivacy` |
-| `.github/workflows/ci.yml` | push / PR で daily-actions の `ios-ci.yml` を呼ぶ（40 桁の SHA で固定） |
-| `.github/workflows/testflight.yml` | 手動（workflow_dispatch）で `ios-testflight.yml` を呼ぶ（アップロードのあと内部テストに配信） |
-| `.github/workflows/asc.yml` | 手動で `ios-asc.yml` を呼ぶ（App Store Connect に名前・説明などを入れる / 最新ビルドを配信） |
-| `docs/app-store.json`, `PRIVACY.md` | App Store Connect に入れる情報、プライバシーポリシー |
-| `scripts/pin-daily-actions.sh` | daily-actions の SHA を書き換える（整備用のセッションか本人だけ。自己 CI の成功を確かめる） |
-| `scripts/new-app.sh` | 名前・表示名・枠（Bundle ID）に書き換える |
-| `scripts/preflight-push.sh`, `.githooks/pre-push` | push の前の検査（秘密・個人情報）と1日の上限 |
-| `scripts/scan-sensitive.sh` | 検査の複製（正本は daily-actions/scan/。違うと CI が警告） |
-| `scripts/make-icon.py` | アイコンを作る（Pillow） |
-| `.claude/skills/` | dev-lifecycle / dev-judgment / dev-workflow（naki0227/useful-map から取得） |
-| `CLAUDE.md`, `docs/daily-runbook.md` | 毎日のセッションの決まりと手順 |
-| `docs/app-store.md` | 審査の危険・本人がすることの記録 |
+- 試したい習慣を 1 つ選ぶ（気になることを書くと、Apple Intelligence が実験の形を 3 つ考える。使えない端末では組み込みの 12 の型から）。
+- 8 日か 14 日のあいだ、毎朝 **くじ** を引く。「やる日」と「やすむ日」が半分ずつ、順番はくじで決まる（当日まで秘密）。
+- 夜に 1 つの質問（例：「けさの目覚めはどうだった？」）に 1〜5 で答える。
+- やる日とやすむ日の平均を比べ、「偶然でもこのくらいの差が出る確率」（並べ替え検定）と一緒に、言葉で結果を出す。効いた実験は「あなたに効くこと」に積み上がる。
 
-## 手元（Mac）で開く
+## だれの
 
-```sh
-brew install xcodegen   # CI は 2.46.0 で固定
-xcodegen generate
-open DailyApp.xcodeproj
-```
+自分に効く習慣を、思い込みではなく確かめたい人。N-of-1（ひとりでの交互の試し）の考え方を、毎日 1 タップで回せる形にした。
 
-## 版
+## iPhone Duo
 
-- Xcode 27.1（ランナー `xcode-27`。GitHub では Preview 扱い）、iOS 18.0 以降、iPhone だけ（iPhone Duo の内側の画面にも合わせる）、Swift 6
-- スキルの取得元：`naki0227/useful-map` の `claude/trusting-noether-9t0vk8`（commit `f42216e`）。main に入ったら取り直す
+内側の大きな画面では、左に今日のくじと実験の一覧、右に日ごとのマス目と結果のグラフが並ぶ（`NavigationSplitView`、size class で切り替え）。閉じた外側の画面やほかの iPhone では 1 列に重なる。
+
+## データ
+
+すべて端末の中（UserDefaults）。通信・ログイン・解析・広告はない。Apple Intelligence も端末の中のモデルだけを使う。
+
+## 作らなかったもの
+
+通知、ヘルスケアとの連携、書き出し・共有、医療・服薬・食事制限に関わる実験（モデルの出力からも除く）。
+
+## 開発
+
+- ビルドとテストは GitHub Actions（`.github/workflows/ci.yml`、iPhone Duo のシミュレータ）。手順は `docs/daily-runbook.md`。
+- 処理は画面から切り離してある：くじ `Scheduler`、結果 `Analyzer`、保存 `ExperimentStore`、案 `ExperimentDesigner`（テストでは偽物）。
