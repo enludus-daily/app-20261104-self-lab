@@ -89,14 +89,18 @@ struct ArmBadge: View {
     var large = false
 
     var body: some View {
-        Label(arm.title, systemImage: Theme.symbol(for: arm))
-            .font(large ? .title2.weight(.heavy) : .caption.weight(.bold))
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, large ? 16 : 8)
-            .padding(.vertical, large ? 8 : 4)
-            .background(Capsule().fill(Theme.color(for: arm)))
+        HStack(spacing: large ? 6 : 3) {
+            Image(systemName: Theme.symbol(for: arm))
+            Text(arm.title)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .font(large ? .title2.weight(.heavy) : .caption.weight(.bold))
+        .foregroundStyle(.white)
+        .padding(.horizontal, large ? 16 : 8)
+        .padding(.vertical, large ? 8 : 4)
+        .background(Capsule().fill(Theme.color(for: arm)))
+        .accessibilityElement(children: .combine)
     }
 }
 
