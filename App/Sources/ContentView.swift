@@ -344,7 +344,7 @@ struct TodayPage: View {
                         } else {
                             VStack(alignment: .leading, spacing: Space.s) {
                                 if !drawnOnce {
-                                    CoachBubble(text: "筒を押すと、振ってくじが出ます")
+                                    CoachBubble(text: "筒を押してみて")
                                 }
                                 Text("今日はどっち？")
                                     .font(Typo.title(.title3))
@@ -577,6 +577,8 @@ struct CoachBubble: View {
             Text(text)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Palette.paper)
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, Space.s)
                 .padding(.vertical, Space.xs + 2)
                 .background(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).fill(Palette.ink))

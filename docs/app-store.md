@@ -17,7 +17,7 @@
 - 既存のアプリとの意味のある違い：習慣アプリは続けた日を数えるだけ。これはくじで「やる日・やすむ日」を割り付けて比べ、自分に効いたかを数字と言葉で示す。端末の中だけで完結。
 - 長く使える価値（4.2）：実験を終えるたびに「あなたに効くこと」が積み上がり、次の実験へ続く。
 - 他社の名前・商標・見た目を使っていないか：使っていない。アイコンは自作（Pillow で描画）、SF Symbols のみ。
-- Apple Intelligence を使う場合、使えない端末での動き：`SystemLanguageModel.availability` と日本語の対応を確かめ、使えないときは理由を表示し、組み込みの 12 の型から選べる。モデルが失敗したときも型に切り替える。
+- Apple Intelligence を使う場合、使えない端末での動き：`SystemLanguageModel.availability` と日本語の対応を確かめ、使えないときは理由を表示し、組み込みの 42 の型から選べる。モデルが失敗したときも型に切り替える。
 - 健康に関わる表現（1.4.1）：診断・治療をうたわない。実験の型はスマホ・歩く・光・片付けなどの日常の習慣だけ。「医療の判断には使わない」を作る画面・結果の画面・説明文に表示。
 
 ## 収益の道筋（本人が選ぶ）
@@ -33,7 +33,7 @@
 
 ## スクリーンショット
 
-CI の artifact `screenshots`（iPhone Duo のシミュレータ）：launch（今日のくじ）・reveal（くじを引いたあと）・checkin（夜の記録）・detail（見本の結果）・compose（実験を作る）・ダークモード 2 枚。
+CI の artifact `screenshots`（iPhone Duo のシミュレータ）：launch（オンボーディング）・home・reveal・checkin・detail・chance・share・ended・compose・catalog・settings・empty・ダーク 2 枚。
 
 ## 本人がすること
 
