@@ -1,187 +1,278 @@
 import SwiftUI
+import UIKit
 
-/// 見た目の決まり（色・角丸・影）。アイコンの青緑〜すみれ色に合わせる。
-enum Theme {
-    static let teal = Color(red: 0.05, green: 0.62, blue: 0.60)
-    static let violet = Color(red: 0.45, green: 0.36, blue: 0.88)
-    static let amber = Color(red: 1.0, green: 0.71, blue: 0.22)
-    static let rose = Color(red: 0.92, green: 0.36, blue: 0.42)
+// 見た目の決まり（.claude/skills/app-quality-bar/references/look.md §2〜4）。
+// 世界観：理科の実験ノート（方眼の記録用紙）・おみくじの筒・ハンコ。
+// 色はここだけで決める。1 色ごとに accent / soft / deep / paper / decor の 5 段階。ライトとダークの両方を持つ。
 
-    static let brand = LinearGradient(colors: [teal, violet], startPoint: .topLeading, endPoint: .bottomTrailing)
-    static let corner: CGFloat = 22
-
-    static func color(for arm: Arm) -> Color {
-        arm == .doIt ? teal : violet
-    }
-
-    static func symbol(for arm: Arm) -> String {
-        arm == .doIt ? "bolt.fill" : "moon.zzz.fill"
-    }
-
-    /// 画面の背景（上に淡い色）
-    static func background(_ scheme: ColorScheme) -> LinearGradient {
-        let top = scheme == .dark ? Color(red: 0.07, green: 0.14, blue: 0.16) : Color(red: 0.88, green: 0.96, blue: 0.95)
-        let bottom = scheme == .dark ? Color(red: 0.05, green: 0.05, blue: 0.08) : Color(red: 0.97, green: 0.97, blue: 0.99)
-        return LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .center)
+extension UIColor {
+    convenience init(hex: UInt32) {
+        self.init(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
     }
 }
 
-/// カード
-struct CardModifier: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-
-    func body(content: Content) -> some View {
-        content
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
-                    .fill(scheme == .dark ? Color(white: 0.13) : Color.white)
-                    .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.06), radius: 12, y: 4)
-            )
+extension Color {
+    /// ライトとダークで変わる色
+    init(light: UInt32, dark: UInt32) {
+        self.init(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light)
+        })
     }
 }
 
+/// 1 色の 5 段階
+struct Swatch: Sendable {
+    /// 主
+    let accent: Color
+    /// 淡い地
+    let soft: Color
+    /// 白い文字が読める濃さ（白い文字を載せるボタンは必ずこれ）
+    let deep: Color
+    /// 紙の地
+    let paper: Color
+    /// 飾り（ラベルの帯・テープ）
+    let decor: Color
+}
+
+enum Palette {
+    // 紙とインク（真っ白・真っ黒にしない）
+    static let desk = Color(light: 0xECE7DC, dark: 0x131417)
+    static let paper = Color(light: 0xFBF9F3, dark: 0x1F2024)
+    static let grid = Color(light: 0xD5E1E6, dark: 0x2B333A)
+    static let margin = Color(light: 0xE8A19C, dark: 0x6B3A38)
+    static let ink = Color(light: 0x2A3038, dark: 0xECE6D8)
+    static let inkSoft = Color(light: 0x6F7884, dark: 0xA39C8E)
+    static let line = Color(light: 0xDCD5C5, dark: 0x3A3C42)
+    static let label = Color(light: 0xFFFEFA, dark: 0x2A2B30)
+    static let clip = Color(light: 0x9AA3AC, dark: 0x7C848C)
+
+    /// やる日＝朱（ハンコの朱肉）
+    static let shu = Swatch(
+        accent: Color(light: 0xE0533D, dark: 0xEE6E58),
+        soft: Color(light: 0xFBE1D9, dark: 0x3D2420),
+        deep: Color(light: 0xB5341F, dark: 0xC2452F),
+        paper: Color(light: 0xFFF5F0, dark: 0x2A1F1D),
+        decor: Color(light: 0xF5C6A5, dark: 0x7A4E3A)
+    )
+
+    /// やすむ日＝藍
+    static let ai = Swatch(
+        accent: Color(light: 0x3F6FB0, dark: 0x7FA3D9),
+        soft: Color(light: 0xDEE8F5, dark: 0x1D2737),
+        deep: Color(light: 0x284F8A, dark: 0x3F6FB0),
+        paper: Color(light: 0xF4F7FC, dark: 0x1C212A),
+        decor: Color(light: 0xBDD2EC, dark: 0x3B4E6B)
+    )
+
+    /// 今日＝蛍光ペン
+    static let marker = Swatch(
+        accent: Color(light: 0xF2C63A, dark: 0xD9B232),
+        soft: Color(light: 0xFCEFB3, dark: 0x4A4220),
+        deep: Color(light: 0x8A6A00, dark: 0xF2C63A),
+        paper: Color(light: 0xFFFBEA, dark: 0x29261A),
+        decor: Color(light: 0xF7DE85, dark: 0x6B5B22)
+    )
+
+    /// おみくじの筒（木）
+    static let wood = Swatch(
+        accent: Color(light: 0xCFA470, dark: 0x9C7A4F),
+        soft: Color(light: 0xF1E3CF, dark: 0x3A2F22),
+        deep: Color(light: 0x9B6E3C, dark: 0x6E5132),
+        paper: Color(light: 0xFAF3E8, dark: 0x2A251E),
+        decor: Color(light: 0xE6C9A0, dark: 0x7C6240)
+    )
+
+    static func swatch(for arm: Arm) -> Swatch {
+        arm == .doIt ? shu : ai
+    }
+
+    /// 結果の色：効果あり＝朱、逆効果＝藍、差なし＝墨、途中＝鉛筆
+    static func verdict(_ verdict: ExperimentResult.Verdict) -> Color {
+        switch verdict {
+        case .better: shu.deep
+        case .worse: ai.deep
+        case .noClearDifference: ink
+        case .notEnough: inkSoft
+        }
+    }
+
+    /// 記録の点数（1〜5）で、マスの濃さを 5 段階に
+    static func ratingOpacity(_ rating: Int) -> Double {
+        let tiers = [0.28, 0.45, 0.62, 0.8, 1.0]
+        return tiers[min(max(rating, 1), 5) - 1]
+    }
+}
+
+/// 書体：見出しと数字はセリフ、本文はゴシック（2 書体）
+enum Typo {
+    static func title(_ style: Font.TextStyle = .title2) -> Font {
+        .system(style, design: .serif).weight(.bold)
+    }
+
+    static func number(_ style: Font.TextStyle = .largeTitle) -> Font {
+        .system(style, design: .serif).weight(.semibold).monospacedDigit()
+    }
+
+    /// 小さなラベル（字間を開けて使う）
+    static let tag = Font.caption2.weight(.semibold)
+}
+
+/// 角丸の段階
+enum Radius {
+    static let tag: CGFloat = 4
+    static let tile: CGFloat = 8
+    static let button: CGFloat = 12
+    static let page: CGFloat = 18
+}
+
+/// 余白の段階
+enum Space {
+    static let xs: CGFloat = 4
+    static let s: CGFloat = 8
+    static let m: CGFloat = 12
+    static let l: CGFloat = 16
+    static let xl: CGFloat = 24
+    static let xxl: CGFloat = 32
+}
+
+/// 影は 3 種類だけ
 extension View {
-    func card() -> some View { modifier(CardModifier()) }
+    /// 紙（ふだん）
+    func paperShadow() -> some View {
+        shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+    }
+
+    /// 浮いた物（札・ハンコ・結果カード）
+    func liftedShadow() -> some View {
+        shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 6)
+    }
+
+    /// 線の影（ラベル・小さな札の厚み）
+    func edgeShadow() -> some View {
+        shadow(color: Palette.line, radius: 0, x: 0, y: 1)
+    }
 }
 
-/// 押すと少し縮むボタン（主な操作）
-struct BrandButtonStyle: ButtonStyle {
-    var fill: AnyShapeStyle = AnyShapeStyle(Theme.brand)
+/// 主なボタン：判子調の四角。下辺だけ太い線で押せるキーに見せ、押すと沈む
+struct StampButtonStyle: ButtonStyle {
+    var swatch: Swatch = Palette.shu
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(.headline)
             .foregroundStyle(.white)
-            .padding(.vertical, 14)
-            .padding(.horizontal, 18)
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, Space.l)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isEnabled ? fill : AnyShapeStyle(Color.gray.opacity(0.35)))
+                RoundedRectangle(cornerRadius: Radius.button, style: .continuous)
+                    .fill(isEnabled ? swatch.deep : Palette.inkSoft.opacity(0.5))
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.button, style: .continuous)
+                    .fill(Color.black.opacity(0.28))
+                    .offset(y: pressed ? 1 : 4)
+            )
+            .offset(y: pressed ? 3 : 0)
+            .animation(.spring(response: 0.18, dampingFraction: 0.6), value: pressed)
     }
 }
 
-/// 控えめなボタン
-struct SoftButtonStyle: ButtonStyle {
-    var tint: Color = Theme.teal
+/// 控えめなボタン：鉛筆の線で囲った札
+struct PencilButtonStyle: ButtonStyle {
+    var color: Color = Palette.ink
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(tint)
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
-            .background(Capsule().fill(tint.opacity(configuration.isPressed ? 0.22 : 0.12)))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.snappy(duration: 0.12), value: configuration.isPressed)
+            .foregroundStyle(color)
+            .padding(.horizontal, Space.m)
+            .frame(minHeight: 44)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
+                    .fill(Palette.paper)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
+                    .strokeBorder(color.opacity(0.55), lineWidth: 1.2)
+            )
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
-/// やる日・やすむ日の札
-struct ArmBadge: View {
-    let arm: Arm
-    var large = false
+/// 振動。設定で切れる（手応えの表は README）
+struct HapticModifier<T: Equatable>: ViewModifier {
+    let feedback: SensoryFeedback
+    let trigger: T
+    @AppStorage("haptics") private var enabled = true
 
-    var body: some View {
-        HStack(spacing: large ? 6 : 3) {
-            Image(systemName: Theme.symbol(for: arm))
-            Text(arm.title)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-        }
-        .font(large ? .title2.weight(.heavy) : .caption.weight(.bold))
-        .foregroundStyle(.white)
-        .padding(.horizontal, large ? 16 : 8)
-        .padding(.vertical, large ? 8 : 4)
-        .background(Capsule().fill(Theme.color(for: arm)))
-        .accessibilityElement(children: .combine)
+    func body(content: Content) -> some View {
+        let on = enabled
+        let feedback = feedback
+        return content.sensoryFeedback(trigger: trigger) { _, _ in on ? feedback : nil }
     }
 }
 
-/// 紙吹雪（記録したとき・結果が出たとき）
-struct Confetti: View {
-    @State private var fall = false
-    private let pieces: [(x: CGFloat, delay: Double, color: Color, size: CGFloat)] = (0..<32).map { i in
-        let colors = [Theme.teal, Theme.violet, Theme.amber, Theme.rose]
-        return (x: CGFloat((i * 37) % 100) / 100, delay: Double(i % 8) * 0.07, color: colors[i % colors.count], size: CGFloat(6 + (i % 4) * 2))
-    }
-
-    var body: some View {
-        GeometryReader { proxy in
-            ForEach(0..<pieces.count, id: \.self) { i in
-                let piece = pieces[i]
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(piece.color)
-                    .frame(width: piece.size, height: piece.size * 1.6)
-                    .rotationEffect(.degrees(fall ? Double(i * 47) : 0))
-                    .position(x: piece.x * proxy.size.width, y: fall ? proxy.size.height + 20 : -20)
-                    .animation(.easeIn(duration: 1.6).delay(piece.delay), value: fall)
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear { fall = true }
+extension View {
+    func haptic<T: Equatable>(_ feedback: SensoryFeedback, trigger: T) -> some View {
+        modifier(HapticModifier(feedback: feedback, trigger: trigger))
     }
 }
 
-/// 実験の日ごとのマス目（記録した日は数字、今日は枠）
-struct DayGrid: View {
-    let experiment: Experiment
-    let today: Int?
-    var compact = false
+/// 横揺れ（失敗・間違い）。0,-8,7,-5,4,-2,0 のように減衰する
+struct ShakeEffect: GeometryEffect {
+    var phase: CGFloat
+    var travel: CGFloat = 8
+
+    var animatableData: CGFloat {
+        get { phase }
+        set { phase = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let progress = phase - phase.rounded(.down)
+        let decay = 1 - progress
+        let x = travel * decay * sin(progress * .pi * 6)
+        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
+    }
+}
+
+/// 0.6 → 1 のバネで出てくる（結果・ハンコ）。動きを減らす設定ではそのまま出す
+struct PopIn: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(shown || reduceMotion ? 1 : 0.6)
+            .opacity(shown || reduceMotion ? 1 : 0)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { shown = true }
+            }
+    }
+}
+
+extension View {
+    func popIn() -> some View { modifier(PopIn()) }
+}
+
+/// 小さなラベル（字間を開ける）
+struct TagText: View {
+    let text: String
+    var color: Color = Palette.inkSoft
 
     var body: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: compact ? 4 : 8), count: 7)
-        LazyVGrid(columns: columns, spacing: compact ? 4 : 8) {
-            ForEach(Array(experiment.schedule.enumerated()), id: \.offset) { day, arm in
-                cell(day: day, arm: arm)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func cell(day: Int, arm: Arm) -> some View {
-        let checkIn = experiment.checkIn(day: day)
-        let revealed = experiment.isRevealed(day: day)
-        let color = revealed ? Theme.color(for: arm) : Color.secondary
-        ZStack {
-            RoundedRectangle(cornerRadius: compact ? 4 : 10, style: .continuous)
-                .fill(checkIn != nil ? color.opacity(checkIn?.followed == false ? 0.35 : 1) : color.opacity(0.12))
-            if day == today {
-                RoundedRectangle(cornerRadius: compact ? 4 : 10, style: .continuous)
-                    .strokeBorder(Theme.amber, lineWidth: compact ? 1.5 : 3)
-            }
-            if !compact {
-                if let checkIn {
-                    Text("\(checkIn.rating)")
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(.white)
-                } else if revealed {
-                    Image(systemName: Theme.symbol(for: arm))
-                        .font(.caption)
-                        .foregroundStyle(color)
-                } else {
-                    Text("\(day + 1)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText(day: day, arm: arm, checkIn: checkIn, revealed: revealed))
-    }
-
-    private func accessibilityText(day: Int, arm: Arm, checkIn: CheckIn?, revealed: Bool) -> String {
-        var text = "\(day + 1) 日目"
-        if revealed { text += "、\(arm.title)" }
-        if let checkIn { text += "、記録 \(checkIn.rating)" + (checkIn.followed ? "" : "、くじのとおりにできなかった") }
-        return text
+        Text(text)
+            .font(Typo.tag)
+            .kerning(0.6)
+            .foregroundStyle(color)
     }
 }

@@ -53,6 +53,8 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
     var isSample = false
     /// 効果が翌朝に分かる実験（例：寝る前の習慣 → けさの目覚め）。その日の分は翌朝に記録する
     var nextMorning = false
+    /// もとにした型（App/Resources/templates.json の id）
+    var templateID: String?
 
     /// 記録が何日ずれるか（翌朝に記録する実験は 1）
     var recordLag: Int { nextMorning ? 1 : 0 }
@@ -114,11 +116,12 @@ struct ExperimentDraft: Equatable, Identifiable, Sendable {
     var reason: String
     var source: Source
     var nextMorning = false
+    var templateID: String?
 
     static func == (lhs: ExperimentDraft, rhs: ExperimentDraft) -> Bool {
         lhs.title == rhs.title && lhs.action == rhs.action && lhs.question == rhs.question
             && lhs.lowLabel == rhs.lowLabel && lhs.highLabel == rhs.highLabel && lhs.reason == rhs.reason && lhs.source == rhs.source
-            && lhs.nextMorning == rhs.nextMorning
+            && lhs.nextMorning == rhs.nextMorning && lhs.templateID == rhs.templateID
     }
 
     static let empty = ExperimentDraft(title: "", action: "", question: "", lowLabel: "", highLabel: "", reason: "", source: .manual)
@@ -127,7 +130,10 @@ struct ExperimentDraft: Equatable, Identifiable, Sendable {
 /// 下書きを整える（空・長すぎ・医療に当たるものを除く）
 enum DraftCleaner {
     /// 医療・服薬・極端な食事に当たる言葉。日々の小さな習慣だけを扱う
-    static let blockedWords = ["薬", "サプリ", "断食", "絶食", "処方", "治療", "注射", "medication", "supplement", "fasting", "drug"]
+    static let blockedWords = [
+        "薬", "サプリ", "断食", "絶食", "処方", "治療", "注射", "ダイエット", "食事制限", "カロリー", "糖質",
+        "medication", "supplement", "fasting", "drug", "diet",
+    ]
 
     static func clean(_ draft: ExperimentDraft) -> ExperimentDraft? {
         var result = draft

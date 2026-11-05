@@ -1,17 +1,19 @@
 import SwiftUI
 
-/// 夜の記録：質問に 1〜5 で答え、くじのとおりに過ごせたかを残す
+/// 記録：質問に 1〜5 で答える。選んだ数字に鉛筆の丸が描かれ、くじのとおりにできたかを残す
 struct CheckInSheet: View {
     let experiment: Experiment
     let day: Int
     let onSave: (Int, Bool, String) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rating: Int?
     @State private var followed = true
     @State private var note = ""
     @State private var saved = false
+    @State private var shake: CGFloat = 0
+    @State private var failures = 0
 
     init(experiment: Experiment, day: Int, onSave: @escaping (Int, Bool, String) -> Void) {
         self.experiment = experiment
@@ -25,56 +27,74 @@ struct CheckInSheet: View {
 
     var body: some View {
         let arm = experiment.arm(day: day) ?? .doIt
+        let swatch = Palette.swatch(for: arm)
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack {
-                        Text(experiment.nextMorning ? "\(day + 1) 日目の翌朝" : "\(day + 1) 日目").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                        ArmBadge(arm: arm)
-                    }
-                    Text(experiment.question)
-                        .font(.title.weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
+                NotebookPage(showsClip: true) {
+                    VStack(alignment: .leading, spacing: Space.l) {
+                        HStack(spacing: Space.s) {
+                            TagText(text: experiment.nextMorning ? "\(day + 1) 日目の翌朝" : "\(day + 1) 日目の夜", color: Palette.ink)
+                            Text(arm.title)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, Space.s)
+                                .padding(.vertical, 2)
+                                .background(RoundedRectangle(cornerRadius: Radius.tag).fill(swatch.deep))
+                        }
+                        Text(experiment.question)
+                            .font(Typo.title(.title))
+                            .foregroundStyle(Palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    ratingPicker
+                        ratingRow(swatch: swatch)
+                            .modifier(ShakeEffect(phase: shake))
 
-                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("1 \(experiment.lowLabel)")
+                            Spacer()
+                            Text("\(experiment.highLabel) 5")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Palette.inkSoft)
+
                         Toggle(isOn: $followed) {
                             Text(arm == .doIt ? "「\(experiment.action)」をした" : "「\(experiment.action)」をせずに過ごした")
                                 .font(.subheadline)
+                                .foregroundStyle(Palette.ink)
                         }
-                        .tint(Theme.color(for: arm))
+                        .tint(swatch.deep)
                         if !followed {
-                            Text("くじのとおりにできなかった日は、比べるのから外します。正直に残すほど、結果が確かになります。")
+                            Text("くじのとおりにできなかった日は、斜線のマスになり、比べるのから外します。正直に残すほど結果が確かになります。")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Palette.inkSoft)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                    }
-                    .card()
 
-                    TextField("ひとことメモ（なくてよい）", text: $note, axis: .vertical)
-                        .lineLimit(1...3)
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.primary.opacity(0.05)))
+                        TextField("ひとことメモ（なくてよい）", text: $note, axis: .vertical)
+                            .lineLimit(1...3)
+                            .padding(Space.m)
+                            .background(Palette.label)
+                            .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Palette.line, lineWidth: 1))
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
 
-                    Button {
-                        guard let rating else { return }
-                        onSave(rating, followed, note)
-                        saved = true
-                        Task {
-                            try? await Task.sleep(for: .milliseconds(900))
-                            dismiss()
+                        if rating == nil && failures > 0 {
+                            Text("先に 1〜5 のどれかに丸をつけてください。")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(Palette.shu.deep)
                         }
-                    } label: {
-                        Label("記録する", systemImage: "checkmark")
+
+                        Button(action: save) {
+                            Label(saved ? "記録しました" : "記録する", systemImage: saved ? "checkmark.seal.fill" : "pencil.and.list.clipboard")
+                        }
+                        .buttonStyle(StampButtonStyle(swatch: swatch))
+                        .disabled(saved)
                     }
-                    .buttonStyle(BrandButtonStyle(fill: AnyShapeStyle(Theme.color(for: arm))))
-                    .disabled(rating == nil || saved)
                 }
-                .padding(20)
+                .padding(Space.l)
+                .padding(.top, Space.l)
             }
-            .background(Theme.background(scheme).ignoresSafeArea())
-            .overlay { if saved { Confetti() } }
+            .background(Palette.desk.ignoresSafeArea())
+            .overlay { if saved { PaperBits() } }
             .navigationTitle(experiment.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -82,42 +102,60 @@ struct CheckInSheet: View {
                     Button("閉じる") { dismiss() }
                 }
             }
-            .sensoryFeedback(.selection, trigger: rating)
-            .sensoryFeedback(.success, trigger: saved)
+            .haptic(.selection, trigger: rating)
+            .haptic(.error, trigger: failures)
         }
     }
 
-    private var ratingPicker: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                ForEach(Array(Experiment.ratingRange), id: \.self) { value in
-                    Button {
-                        withAnimation(.spring(duration: 0.3, bounce: 0.5)) { rating = value }
-                    } label: {
-                        Text("\(value)")
-                            .font(.title.weight(.bold).monospacedDigit())
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 64)
-                            .foregroundStyle(rating == value ? .white : .primary)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(rating == value ? AnyShapeStyle(Theme.brand) : AnyShapeStyle(Color.primary.opacity(0.06)))
-                            )
-                            .scaleEffect(rating == value ? 1.08 : 1)
+    private func ratingRow(swatch: Swatch) -> some View {
+        HStack(spacing: Space.s) {
+            ForEach(Array(Experiment.ratingRange), id: \.self) { value in
+                let selected = rating == value
+                Button {
+                    if reduceMotion {
+                        rating = value
+                    } else {
+                        withAnimation(.easeOut(duration: 0.35)) { rating = value }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(value)")
-                    .accessibilityAddTraits(rating == value ? .isSelected : [])
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
+                            .fill(swatch.accent.opacity(selected ? Palette.ratingOpacity(value) * 0.35 : 0))
+                        Text("\(value)")
+                            .font(.system(.title, design: .serif).weight(.bold).monospacedDigit())
+                            .foregroundStyle(selected ? swatch.deep : Palette.ink)
+                            .scaleEffect(selected ? 1.15 : 1)
+                        // 鉛筆の丸（trim で描く）
+                        Ellipse()
+                            .trim(from: 0, to: selected ? 1 : 0)
+                            .stroke(swatch.deep, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .rotationEffect(.degrees(-100))
+                            .scaleEffect(x: 1.05, y: 0.9)
+                            .padding(4)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 60)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(value)")
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
-            HStack {
-                Text("1 \(experiment.lowLabel)")
-                Spacer()
-                Text("\(experiment.highLabel) 5")
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
         }
-        .card()
+    }
+
+    private func save() {
+        guard let rating else {
+            failures += 1
+            if reduceMotion { return }
+            withAnimation(.linear(duration: 0.42)) { shake += 1 }
+            return
+        }
+        onSave(rating, followed, note)
+        saved = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(reduceMotion ? 300 : 1000))
+            dismiss()
+        }
     }
 }

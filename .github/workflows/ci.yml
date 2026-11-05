@@ -23,5 +23,5 @@ jobs:
       test-destination: "platform=iOS Simulator,name=iPhone Duo,OS=27.1"
       screenshot-device: iPhone Duo
       # 撮る画面（アプリが起動引数 -screenshotScene <名前> で開く画面。@dark でダークモード）。手順書 9.5
-      screenshot-scenes: launch reveal checkin detail compose launch@dark detail@dark
+      screenshot-scenes: onboarding launch reveal checkin detail chance share ended compose catalog settings empty launch@dark detail@dark
       guard-disabled: ${{ vars.DAILY_GUARD_DISABLED == 'true' && 'true' || 'false' }}

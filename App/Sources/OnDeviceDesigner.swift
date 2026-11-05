@@ -15,15 +15,15 @@ struct OnDeviceDesigner: ExperimentDesigner {
             if model.supportsLocale(Locale(identifier: "ja_JP")) {
                 return .available
             }
-            return .unavailable("Apple Intelligence が日本語に対応していない設定です。組み込みの型から選べます。")
+            return .unavailable("Apple Intelligence が日本語に対応していない設定です。組み込みの 42 の型から選べます。")
         case .unavailable(.deviceNotEligible):
-            return .unavailable("この iPhone は Apple Intelligence に対応していません。組み込みの型から選べます。")
+            return .unavailable("この iPhone は Apple Intelligence に対応していません。組み込みの 42 の型から選べます。")
         case .unavailable(.modelNotReady):
-            return .unavailable("Apple Intelligence のモデルを準備中です。それまでは組み込みの型から選べます。")
+            return .unavailable("Apple Intelligence のモデルを準備中です。それまでは組み込みの 42 の型から選べます。")
         case .unavailable:
-            return .unavailable("Apple Intelligence が使えません（設定でオフなど）。組み込みの型から選べます。")
+            return .unavailable("Apple Intelligence が使えません（設定でオフなど）。組み込みの 42 の型から選べます。")
         @unknown default:
-            return .unavailable("Apple Intelligence が使えません。組み込みの型から選べます。")
+            return .unavailable("Apple Intelligence が使えません。組み込みの 42 の型から選べます。")
         }
     }
 

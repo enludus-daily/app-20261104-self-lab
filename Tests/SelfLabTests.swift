@@ -120,6 +120,75 @@ struct AnalyzerTests {
     }
 }
 
+// MARK: - 偶然の確率の図・言葉
+
+struct ChanceTests {
+    @Test func distributionCoversAllCombinations() {
+        let buckets = Analyzer.differenceDistribution([4, 5, 4, 5], [2, 3, 2, 3])
+        #expect(buckets.reduce(0) { $0 + $1.count } == 70)
+        #expect(buckets.map(\.difference) == buckets.map(\.difference).sorted())
+        // 外側の割合が p 値と同じ
+        let outside = buckets.filter { abs($0.difference) >= 2 - 1e-9 }.reduce(0) { $0 + $1.count }
+        #expect(abs(Double(outside) / 70 - Analyzer.permutationPValue([4, 5, 4, 5], [2, 3, 2, 3])) < 1e-9)
+    }
+
+    @Test func distributionIsSymmetricForEqualGroups() {
+        let buckets = Analyzer.differenceDistribution([1, 2, 3], [4, 5, 6])
+        let dict = Dictionary(uniqueKeysWithValues: buckets.map { ($0.difference, $0.count) })
+        for (d, c) in dict {
+            #expect(dict[-d] == c)
+        }
+    }
+
+    @Test func analogyGetsRarerWithSmallerP() {
+        #expect(ResultText.analogy(0.01).contains("サイコロ"))
+        #expect(ResultText.analogy(0.03).contains("5 回"))
+        #expect(ResultText.analogy(0.5).contains("よくある"))
+    }
+
+    @Test func remainingDays() {
+        let result = Analyzer.result(doRatings: [3], restRatings: [3, 3])
+        let left = ResultText.remaining(result)
+        #expect(left.doDays == 2)
+        #expect(left.restDays == 1)
+    }
+}
+
+// MARK: - 画面の文
+
+@MainActor
+struct WordingTests {
+    @Test func greetingNeverBlames() {
+        #expect(Greeting.text(streak: 0, recordedDays: 0).contains("ようこそ"))
+        #expect(Greeting.text(streak: 0, recordedDays: 9).contains("おかえり"))
+        #expect(Greeting.text(streak: 5, recordedDays: 9).contains("5 日続けて"))
+        for streak in 0...3 {
+            let text = Greeting.text(streak: streak, recordedDays: 4)
+            #expect(!text.contains("途切れ"))
+        }
+    }
+
+    @Test func statusGivesNextStep() {
+        var e = Experiment(title: "t", action: "a", question: "q", lowLabel: "l", highLabel: "h", reason: "", startDate: day(1), duration: 8, seed: 1)
+        let empty = Analyzer.result(for: e)
+        #expect(DetailText.status(experiment: e, finished: false, today: 0, result: empty, now: day(1), calendar: tokyo).contains("あと やる日"))
+        #expect(DetailText.status(experiment: e, finished: false, today: 3, result: empty, now: day(4), calendar: tokyo).contains("抜けている"))
+        e.endedEarly = true
+        #expect(DetailText.status(experiment: e, finished: true, today: nil, result: empty, now: day(4), calendar: tokyo).contains("途中で終えた"))
+    }
+
+    @Test func verticalSpineTitle() {
+        #expect(NotebookSpine.verticalTitle("昼食 歩く") == "昼\n食\n歩\nく")
+        #expect(NotebookSpine.verticalTitle("寝る1時間前にスマホを置く").hasSuffix("…"))
+    }
+
+    @Test func ratingTiersIncrease() {
+        let tiers = (1...5).map(Palette.ratingOpacity)
+        #expect(tiers == tiers.sorted())
+        #expect(Palette.ratingOpacity(9) == 1)
+    }
+}
+
 // MARK: - 実験の日付
 
 struct ExperimentDayTests {
@@ -183,7 +252,7 @@ struct DraftTests {
 
     @Test func templatesMatchWorry() {
         let titles = TemplateLibrary.suggestions(for: "午後になると眠くて集中できない").map(\.title)
-        #expect(titles.contains("昼食のあと 10 分歩く"))
+        #expect(titles.first == "昼食のあと 10 分歩く")
         #expect(titles.count == 3)
     }
 
@@ -191,9 +260,54 @@ struct DraftTests {
         #expect(TemplateLibrary.suggestions(for: "zzz").count == 3)
     }
 
-    @Test func allTemplatesAreValid() {
-        for template in TemplateLibrary.all {
-            #expect(DraftCleaner.clean(template.draft) != nil, "\(template.title)")
+    @Test func draftProblemExplainsNextStep() {
+        #expect(DraftProblem.message(for: .empty).contains("題"))
+        var draft = draft("サプリを飲む")
+        draft.action = "朝に飲む"
+        #expect(DraftCleaner.clean(draft) == nil)
+        #expect(DraftProblem.message(for: draft).contains("医療"))
+    }
+}
+
+// MARK: - 実験の型（App/Resources/templates.json）
+
+struct TemplateLibraryTests {
+    @Test func hasAtLeastFortyTemplates() {
+        #expect(TemplateLibrary.all.count >= 40)
+    }
+
+    @Test func idsAreUnique() {
+        #expect(Set(TemplateLibrary.all.map(\.id)).count == TemplateLibrary.all.count)
+        #expect(Set(TemplateLibrary.all.map(\.title)).count == TemplateLibrary.all.count)
+    }
+
+    @Test(arguments: TemplateCategory.allCases)
+    func everyCategoryHasEnough(category: TemplateCategory) {
+        #expect(TemplateLibrary.templates(in: category).count >= 5)
+    }
+
+    @Test func everyTemplateIsComplete() {
+        for t in TemplateLibrary.all {
+            #expect(DraftCleaner.clean(t.draft) != nil, "\(t.id)")
+            #expect(Experiment.durations.contains(t.days), "\(t.id)")
+            #expect(!t.tip.isEmpty && !t.pitfall.isEmpty && !t.reason.isEmpty, "\(t.id)")
+            #expect(!t.keywords.isEmpty, "\(t.id)")
+            #expect(t.draft.templateID == t.id)
+        }
+    }
+
+    @Test func noMedicalOrDietTemplates() {
+        for t in TemplateLibrary.all {
+            let text = [t.title, t.action, t.question, t.reason, t.tip, t.pitfall].joined(separator: " ").lowercased()
+            for word in DraftCleaner.blockedWords {
+                #expect(!text.contains(word.lowercased()), "\(t.id): \(word)")
+            }
+        }
+    }
+
+    @Test func blockedWordsAreRejected() {
+        for word in ["断食", "ダイエット", "処方", "サプリ"] {
+            #expect(DraftCleaner.clean(draft("\(word)をためす")) == nil, "\(word)")
         }
     }
 }
@@ -230,20 +344,36 @@ struct DesignerTests {
 struct StoreTests {
     @Test func seedsSamplesOnce() {
         let store = makeStore(seedSamples: true)
-        #expect(store.experiments.count == 2)
-        #expect(store.finished(now: day(4)).count == 1)
+        #expect(store.experiments.count == 3)
+        #expect(store.finished(now: day(4)).count == 2)
         #expect(store.active(now: day(4)).count == 1)
-        let sample = store.finished(now: day(4))[0]
-        #expect(Analyzer.result(for: sample).verdict == .better)
+        let finished = store.finished(now: day(4)).first { !$0.endedEarly }
+        #expect(finished.map { Analyzer.result(for: $0).verdict } == .better)
+        #expect(store.finished(now: day(4)).contains { $0.endedEarly })
         #expect(store.provenHabits(now: day(4)).count == 1)
-        // 進行中の見本は、今日のくじがまだ
+        // 進行中の見本：4 日目。今日のくじはまだ、2 日目の記録が抜けている
         let active = store.active(now: day(4))[0]
         #expect(active.today(on: day(4), calendar: tokyo) == 3)
         #expect(!active.isRevealed(day: 3))
-        // 翌朝に記録する見本：きのう（3 日目）の分を、けさ記録できる
-        #expect(active.nextMorning)
-        #expect(active.pendingDays(on: day(4), calendar: tokyo) == [2])
-        #expect(store.streak(now: day(4)) == 2)
+        #expect(active.pendingDays(on: day(4), calendar: tokyo) == [3, 1])
+        #expect(active.templateID == "focus-lunch-walk")
+        #expect(store.streak(now: day(4)) == 1)
+        #expect(store.recordedDayCount == 22)
+    }
+
+    @Test func restartCopiesTheExperiment() throws {
+        let store = makeStore()
+        var original = draft()
+        original.templateID = "focus-lunch-walk"
+        let id = try #require(store.start(original, duration: 8, now: day(1), seed: 3))
+        store.endEarly(id: id)
+        let again = try #require(store.restart(id: id, now: day(4), seed: 4))
+        let copy = try #require(store.experiment(id: again))
+        #expect(copy.title == original.title)
+        #expect(copy.templateID == "focus-lunch-walk")
+        #expect(copy.duration == 8)
+        #expect(copy.checkIns.isEmpty)
+        #expect(store.active(now: day(4)).map(\.id) == [again])
     }
 
     @Test func startRecordAndReveal() throws {

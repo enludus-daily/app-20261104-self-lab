@@ -162,6 +162,39 @@ enum Analyzer {
     }
 }
 
+/// くじを入れ替えたときの差の分布（偶然でもこのくらいの差が出る、の図に使う）
+struct DifferenceBucket: Equatable, Sendable, Identifiable {
+    var difference: Double
+    var count: Int
+    var id: Double { difference }
+}
+
+extension Analyzer {
+    /// 記録した点数はそのままに、くじの割り付けだけを全通り入れ替えたときの「平均の差」の分布
+    static func differenceDistribution(_ a: [Int], _ b: [Int]) -> [DifferenceBucket] {
+        let values = a + b
+        let n = values.count
+        let k = a.count
+        guard k > 0, k < n, n <= 24 else { return [] }
+        let total = values.reduce(0, +)
+        var counts: [Int: Int] = [:]
+        func walk(_ start: Int, _ chosen: Int, _ sum: Int) {
+            if chosen == k {
+                counts[sum * n - total * k, default: 0] += 1
+                return
+            }
+            let remaining = k - chosen
+            guard start <= n - remaining else { return }
+            for i in start...(n - remaining) {
+                walk(i + 1, chosen + 1, sum + values[i])
+            }
+        }
+        walk(0, 0, 0)
+        let scale = Double(k * (n - k))
+        return counts.keys.sorted().map { DifferenceBucket(difference: Double($0) / scale, count: counts[$0] ?? 0) }
+    }
+}
+
 /// 結果を言葉にする
 enum ResultText {
     static func headline(_ result: ExperimentResult) -> String {
@@ -205,6 +238,20 @@ enum ResultText {
     static func signed(_ value: Double) -> String {
         let rounded = (value * 10).rounded() / 10
         return rounded > 0 ? "+" + number(rounded) : number(rounded)
+    }
+
+    /// 「偶然でもこのくらいの差が出る確率」のたとえ
+    static func analogy(_ p: Double) -> String {
+        if p < 0.02 { return "サイコロを 2 回振って、2 回とも 6 が出るより起きにくいくらいです。" }
+        if p < 0.06 { return "コインを 5 回投げて、5 回とも表が出るのと同じくらいです。" }
+        if p < 0.15 { return "コインを 3 回投げて、3 回とも表が出るのと同じくらいです。" }
+        if p < 0.35 { return "コインを 2 回投げて、2 回とも表が出るのと同じくらい。偶然でも起きます。" }
+        return "コインの表が出るのと同じくらい、よくあることです。"
+    }
+
+    /// あと何日記録すれば結果が出るか
+    static func remaining(_ result: ExperimentResult) -> (doDays: Int, restDays: Int) {
+        (max(0, Analyzer.minimumPerArm - result.doRatings.count), max(0, Analyzer.minimumPerArm - result.restRatings.count))
     }
 
     static func percent(_ p: Double) -> String {

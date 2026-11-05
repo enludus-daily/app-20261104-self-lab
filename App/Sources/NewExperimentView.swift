@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// 実験を作る：気になることを書く → 案（Apple Intelligence か組み込みの型）を選ぶ → 直して始める
+/// 実験を作る：気になることを書く（Apple Intelligence か型から案）／42 の型を分類から選ぶ → 直して始める
 struct NewExperimentView: View {
     let designer: any ExperimentDesigner
     let onStart: (ExperimentDraft, Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) private var scheme
     @State private var worry: String
     @State private var suggestions: [ExperimentDraft]
-    @State private var draft: ExperimentDraft?
-    @State private var duration = Experiment.defaultDuration
+    @State private var category: TemplateCategory?
+    @State private var expanded: String?
+    @State private var editing: EditingDraft?
     @State private var isThinking = false
     @State private var notice: String?
 
@@ -19,107 +19,135 @@ struct NewExperimentView: View {
         self.onStart = onStart
         _worry = State(initialValue: seed.worry)
         _suggestions = State(initialValue: seed.suggestions)
+        _category = State(initialValue: seed.category)
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    worryCard
-                    if let notice {
-                        Label(notice, systemImage: "info.circle")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+                VStack(alignment: .leading, spacing: Space.xl) {
+                    worryPage
                     if !suggestions.isEmpty {
-                        Text("実験の案").font(.headline)
-                        ForEach(suggestions) { suggestion in
-                            SuggestionCard(draft: suggestion, selected: draft?.title == suggestion.title) {
-                                withAnimation(.snappy) { draft = suggestion }
+                        VStack(alignment: .leading, spacing: Space.m) {
+                            SectionTitle(text: "あなたへの案", symbol: "sparkles")
+                            ForEach(suggestions) { suggestion in
+                                SuggestionStrip(draft: suggestion, template: TemplateLibrary.template(id: suggestion.templateID)) {
+                                    editing = EditingDraft(draft: suggestion, days: TemplateLibrary.template(id: suggestion.templateID)?.days ?? Experiment.defaultDuration)
+                                }
                             }
                         }
                     }
-                    if let draft {
-                        editor(for: draft)
-                            .id(draft.id)
-                    }
-                    templateStrip
-                    Text("医療の判断には使わないでください。体調に関わることは医師に相談してください。")
+                    catalog
+                    Text("医療・服薬・食事制限に関わる実験は扱いません。体調に関わることは医師に相談してください。")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Palette.inkSoft)
                 }
-                .padding(20)
+                .padding(Space.l)
+                .frame(maxWidth: 720)
+                .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.background(scheme).ignoresSafeArea())
+            .background(Palette.desk.ignoresSafeArea())
             .navigationTitle("実験を作る")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("閉じる") { dismiss() }
                 }
-            }
-        }
-    }
-
-    private var worryCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("気になること・ためしたいこと")
-                .font(.headline)
-            TextField("例：午後になると眠くて集中できない", text: $worry, axis: .vertical)
-                .lineLimit(2...4)
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.primary.opacity(0.05)))
-            Button(action: think) {
-                if isThinking {
-                    HStack(spacing: 8) {
-                        ProgressView().tint(.white)
-                        Text("考えています…")
+                ToolbarItem(placement: .primaryAction) {
+                    Button("自分で書く") {
+                        editing = EditingDraft(draft: .empty, days: Experiment.defaultDuration)
                     }
-                } else {
-                    Label(designer.status == .available ? "Apple Intelligence で実験を考える" : "合う実験の型を探す", systemImage: designer.status == .available ? "apple.intelligence" : "magnifyingglass")
                 }
             }
-            .buttonStyle(BrandButtonStyle())
-            .disabled(worry.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isThinking)
-            if case .unavailable(let reason) = designer.status {
-                Text(reason)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            .navigationDestination(item: $editing) { item in
+                DraftEditor(initial: item.draft, days: item.days) { draft, days in
+                    onStart(draft, days)
+                    dismiss()
+                }
             }
         }
-        .card()
     }
 
-    private var templateStrip: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("型から選ぶ").font(.headline)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(TemplateLibrary.all, id: \.title) { template in
-                        Button {
-                            withAnimation(.snappy) { draft = template.draft }
-                        } label: {
-                            Label(template.title, systemImage: template.symbol)
+    private var worryPage: some View {
+        NotebookPage(tilt: -0.4) {
+            VStack(alignment: .leading, spacing: Space.m) {
+                LabelSticker(text: "気になること・ためしたいこと", color: Palette.marker.accent, font: Typo.title(.headline))
+                TextField("例：午後になると眠くて集中できない", text: $worry, axis: .vertical)
+                    .lineLimit(2...4)
+                    .padding(Space.m)
+                    .background(Palette.label)
+                    .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Palette.line, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+                Button(action: think) {
+                    if isThinking {
+                        HStack(spacing: Space.s) {
+                            ProgressView().tint(.white)
+                            Text("考えています…")
                         }
-                        .buttonStyle(SoftButtonStyle(tint: Theme.violet))
+                    } else {
+                        Label(designer.status == .available ? "Apple Intelligence で実験を考える" : "合う実験の型を探す",
+                              systemImage: designer.status == .available ? "apple.intelligence" : "magnifyingglass")
                     }
                 }
+                .buttonStyle(StampButtonStyle())
+                .disabled(worry.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isThinking)
+                if case .unavailable(let reason) = designer.status {
+                    Label(reason, systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(Palette.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let notice {
+                    Label(notice, systemImage: "exclamationmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(Palette.shu.deep)
+                }
             }
-            Button {
-                withAnimation(.snappy) { draft = ExperimentDraft.empty }
-            } label: {
-                Label("自分で書く", systemImage: "square.and.pencil")
+        }
+        .padding(.top, Space.m)
+    }
+
+    private var catalog: some View {
+        VStack(alignment: .leading, spacing: Space.m) {
+            SectionTitle(text: "\(TemplateLibrary.all.count) の型から選ぶ", symbol: "tray.full")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Space.s) {
+                    chip(nil, title: "すべて", symbol: "square.grid.2x2")
+                    ForEach(TemplateCategory.allCases) { item in
+                        chip(item, title: item.title, symbol: item.symbol)
+                    }
+                }
+                .padding(.vertical, 2)
             }
-            .buttonStyle(SoftButtonStyle())
+            ForEach(TemplateLibrary.templates(in: category)) { template in
+                TemplateStrip(template: template, expanded: expanded == template.id) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        expanded = expanded == template.id ? nil : template.id
+                    }
+                } onChoose: {
+                    editing = EditingDraft(draft: template.draft, days: template.days)
+                }
+            }
         }
     }
 
-    private func editor(for initial: ExperimentDraft) -> some View {
-        DraftEditor(initial: initial, duration: $duration) { edited in
-            onStart(edited, duration)
-            dismiss()
+    private func chip(_ item: TemplateCategory?, title: String, symbol: String) -> some View {
+        let selected = category == item
+        return Button {
+            withAnimation(.snappy) { category = item }
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(selected ? Color.white : Palette.ink)
+                .padding(.horizontal, Space.m)
+                .frame(minHeight: 40)
+                .background(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous).fill(selected ? Palette.ai.deep : Palette.label))
+                .overlay(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous).strokeBorder(Palette.line, lineWidth: selected ? 0 : 1))
         }
+        .buttonStyle(.plain)
+        .haptic(.selection, trigger: selected)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private func think() {
@@ -145,96 +173,199 @@ struct NewExperimentView: View {
     }
 }
 
-/// 案のカード
-struct SuggestionCard: View {
+struct EditingDraft: Identifiable, Hashable {
+    let id = UUID()
+    var draft: ExperimentDraft
+    var days: Int
+
+    static func == (lhs: EditingDraft, rhs: EditingDraft) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
+/// 案の紙片
+struct SuggestionStrip: View {
     let draft: ExperimentDraft
-    let selected: Bool
-    let onSelect: () -> Void
+    let template: ExperimentTemplate?
+    let onChoose: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Image(systemName: draft.source == .model ? "apple.intelligence" : TemplateLibrary.symbol(for: draft.title))
-                        .foregroundStyle(Theme.brand)
-                    Text(draft.title).font(.headline).multilineTextAlignment(.leading)
-                    Spacer()
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? Theme.teal : .secondary)
+        Button(action: onChoose) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                HStack(spacing: Space.s) {
+                    Image(systemName: draft.source == .model ? "apple.intelligence" : (template?.symbol ?? "flask"))
+                        .foregroundStyle(Palette.ai.deep)
+                    Text(draft.title).font(Typo.title(.headline)).foregroundStyle(Palette.ink).multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").foregroundStyle(Palette.inkSoft)
                 }
-                Label(draft.action, systemImage: "bolt.fill")
+                Label(draft.action, systemImage: "bolt").font(.subheadline).foregroundStyle(Palette.shu.deep)
+                Label(draft.question + (draft.nextMorning ? "（翌朝）" : ""), systemImage: draft.nextMorning ? "sunrise" : "moon.stars")
                     .font(.subheadline)
-                    .foregroundStyle(Theme.teal)
-                Label(draft.question + (draft.nextMorning ? "（翌朝）" : ""), systemImage: draft.nextMorning ? "sunrise.fill" : "moon.stars.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.violet)
-                if !draft.reason.isEmpty {
-                    Text(draft.reason).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.leading)
-                }
+                    .foregroundStyle(Palette.ai.deep)
             }
-            .foregroundStyle(.primary)
-            .card()
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
-                    .strokeBorder(selected ? Theme.teal : .clear, lineWidth: 2)
-            )
+            .multilineTextAlignment(.leading)
+            .padding(Space.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.paper)
+            .overlay(alignment: .leading) { Rectangle().fill(Palette.marker.accent).frame(width: 4) }
+            .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+            .paperShadow()
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// 型の紙片。押すと、なぜ・コツ・落とし穴が開く
+struct TemplateStrip: View {
+    let template: ExperimentTemplate
+    let expanded: Bool
+    let onToggle: () -> Void
+    let onChoose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Button(action: onToggle) {
+                HStack(alignment: .top, spacing: Space.m) {
+                    Image(systemName: template.symbol)
+                        .font(.title3)
+                        .foregroundStyle(Palette.ai.deep)
+                        .frame(width: 30)
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text(template.title).font(Typo.title(.subheadline)).foregroundStyle(Palette.ink)
+                        Text(template.question).font(.caption).foregroundStyle(Palette.inkSoft)
+                        HStack(spacing: Space.s) {
+                            TagText(text: "\(template.days) 日", color: Palette.ink)
+                            TagText(text: template.nextMorning ? "翌朝に記録" : "夜に記録", color: Palette.ink)
+                            TagText(text: template.category.title)
+                        }
+                    }
+                    .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .foregroundStyle(Palette.inkSoft)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(expanded ? "閉じる" : "なぜ・コツ・落とし穴を開く")
+            if expanded {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Label(template.action, systemImage: "bolt").foregroundStyle(Palette.shu.deep)
+                    Text(template.reason).foregroundStyle(Palette.ink)
+                    Label(template.tip, systemImage: "lightbulb").foregroundStyle(Palette.ink)
+                    Label(template.pitfall, systemImage: "exclamationmark.triangle").foregroundStyle(Palette.shu.deep)
+                    Button(action: onChoose) {
+                        Label("この実験にする", systemImage: "flask")
+                    }
+                    .buttonStyle(StampButtonStyle())
+                }
+                .font(.footnote)
+                .fixedSize(horizontal: false, vertical: true)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(Space.m)
+        .background(Palette.paper)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.line, lineWidth: 1))
     }
 }
 
 /// 選んだ案を直して始める
 struct DraftEditor: View {
     @State private var draft: ExperimentDraft
-    @Binding var duration: Int
-    let onStart: (ExperimentDraft) -> Void
+    @State private var days: Int
+    @State private var shake: CGFloat = 0
+    @State private var failures = 0
+    @State private var problem: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let onStart: (ExperimentDraft, Int) -> Void
 
-    init(initial: ExperimentDraft, duration: Binding<Int>, onStart: @escaping (ExperimentDraft) -> Void) {
+    init(initial: ExperimentDraft, days: Int, onStart: @escaping (ExperimentDraft, Int) -> Void) {
         _draft = State(initialValue: initial)
-        _duration = duration
+        _days = State(initialValue: Experiment.durations.contains(days) ? days : Experiment.defaultDuration)
         self.onStart = onStart
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("この形で始める").font(.headline)
-            field("題", text: $draft.title, prompt: "例：昼食のあと 10 分歩く")
-            field("やる日にすること", text: $draft.action, prompt: "例：昼食を食べ終えたら 10 分歩く")
-            field("自分に聞くこと（大きいほどよい）", text: $draft.question, prompt: "例：きょうの午後の集中は？")
-            Toggle("効果は翌朝に分かる（翌朝に記録する）", isOn: $draft.nextMorning)
-                .font(.subheadline)
-                .tint(Theme.teal)
-            HStack {
-                field("1 のとき", text: $draft.lowLabel, prompt: "わるい")
-                field("5 のとき", text: $draft.highLabel, prompt: "よい")
-            }
-            Picker("日数", selection: $duration) {
-                ForEach(Experiment.durations, id: \.self) { days in
-                    Text(days == 14 ? "\(days) 日（しっかり）" : "\(days) 日（短め）").tag(days)
+        ScrollView {
+            NotebookPage {
+                VStack(alignment: .leading, spacing: Space.m) {
+                    LabelSticker(text: draft.title.isEmpty ? "新しい実験" : draft.title, color: Palette.shu.accent)
+                    field("題", text: $draft.title, prompt: "例：昼食のあと 10 分歩く")
+                    field("やる日にすること", text: $draft.action, prompt: "例：昼食を食べ終えたら 10 分歩く")
+                    field("自分に聞くこと（大きいほどよい）", text: $draft.question, prompt: "例：きょうの午後の集中は？")
+                    HStack(spacing: Space.m) {
+                        field("1 のとき", text: $draft.lowLabel, prompt: "わるい")
+                        field("5 のとき", text: $draft.highLabel, prompt: "よい")
+                    }
+                    Toggle("効果は翌朝に分かる（翌朝に記録する）", isOn: $draft.nextMorning)
+                        .font(.subheadline)
+                        .tint(Palette.ai.deep)
+                    Picker("日数", selection: $days) {
+                        ForEach(Experiment.durations, id: \.self) { value in
+                            Text(value == 14 ? "\(value) 日（しっかり）" : "\(value) 日（短め）").tag(value)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text("毎日くじで、やる日とやすむ日を半分ずつ決めます。くじは当日まで秘密です。")
+                        .font(.caption)
+                        .foregroundStyle(Palette.inkSoft)
+                    if let problem {
+                        Text(problem)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Palette.shu.deep)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Button(action: start) {
+                        Label("今日から始める", systemImage: "flask.fill")
+                    }
+                    .buttonStyle(StampButtonStyle())
+                    .modifier(ShakeEffect(phase: shake))
                 }
             }
-            .pickerStyle(.segmented)
-            Text("毎日くじで、やる日とやすむ日を半分ずつ決めます。くじは当日まで秘密です。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Button {
-                onStart(draft)
-            } label: {
-                Label("今日から始める", systemImage: "flask.fill")
-            }
-            .buttonStyle(BrandButtonStyle())
-            .disabled(DraftCleaner.clean(draft) == nil)
+            .padding(Space.l)
+            .padding(.top, Space.l)
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity)
         }
-        .card()
+        .background(Palette.desk.ignoresSafeArea())
+        .navigationTitle("実験の形")
+        .navigationBarTitleDisplayMode(.inline)
+        .haptic(.error, trigger: failures)
+    }
+
+    private func start() {
+        if let cleaned = DraftCleaner.clean(draft) {
+            onStart(cleaned, days)
+            return
+        }
+        problem = DraftProblem.message(for: draft)
+        failures += 1
+        guard !reduceMotion else { return }
+        withAnimation(.linear(duration: 0.42)) { shake += 1 }
     }
 
     private func field(_ title: String, text: Binding<String>, prompt: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: Space.xs) {
+            TagText(text: title)
             TextField(prompt, text: text, axis: .vertical)
                 .lineLimit(1...3)
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.primary.opacity(0.05)))
+                .padding(Space.s)
+                .background(Palette.label)
+                .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Palette.line, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
         }
+    }
+}
+
+/// 下書きが使えない理由（次の一歩の一文）
+enum DraftProblem {
+    static func message(for draft: ExperimentDraft) -> String {
+        let trimmed = { (s: String) in s.trimmingCharacters(in: .whitespacesAndNewlines) }
+        if trimmed(draft.title).isEmpty { return "題を書いてください（例：昼食のあと 10 分歩く）。" }
+        if trimmed(draft.action).isEmpty { return "やる日にすることを書いてください。" }
+        if trimmed(draft.question).isEmpty { return "毎日自分に聞くことを書いてください（例：きょうの午後の集中は？）。" }
+        return "医療・服薬・食事制限に関わる実験は扱いません。生活の小さな習慣で試してみましょう。"
     }
 }

@@ -49,7 +49,8 @@ final class ExperimentStore {
             startDate: calendar.startOfDay(for: now),
             duration: Experiment.durations.contains(duration) ? duration : Experiment.defaultDuration,
             seed: seed,
-            nextMorning: cleaned.nextMorning
+            nextMorning: cleaned.nextMorning,
+            templateID: cleaned.templateID
         )
         experiments.append(experiment)
         save()
@@ -81,6 +82,17 @@ final class ExperimentStore {
         if !experiments[index].revealedDays.contains(day) { experiments[index].revealedDays.append(day) }
         save()
         return true
+    }
+
+    /// 同じ実験を、今日からもう一度（新しいくじで）始める
+    @discardableResult
+    func restart(id: UUID, now: Date = .now, seed: UInt64 = UInt64.random(in: 1...UInt64.max)) -> UUID? {
+        guard let old = experiment(id: id) else { return nil }
+        let draft = ExperimentDraft(
+            title: old.title, action: old.action, question: old.question, lowLabel: old.lowLabel, highLabel: old.highLabel,
+            reason: old.reason, source: .manual, nextMorning: old.nextMorning, templateID: old.templateID
+        )
+        return start(draft, duration: old.duration, now: now, seed: seed)
     }
 
     func endEarly(id: UUID) {
@@ -121,57 +133,71 @@ final class ExperimentStore {
     }
 }
 
-/// 初めて開いたときの見本。結果の出た実験と、進行中の実験を 1 つずつ
+/// 初めて開いたときの見本：結果の出た実験・途中でやめた実験・進行中（記録の抜けあり）の実験
 enum Samples {
     static let finishedSeed: UInt64 = 20_261_104
+    static let endedSeed: UInt64 = 5_551_104
     static let activeSeed: UInt64 = 7_771_104
+
+    private static func base(_ id: String, start: Date, duration: Int, seed: UInt64) -> Experiment? {
+        guard let t = TemplateLibrary.template(id: id) else { return nil }
+        return Experiment(
+            title: t.title, action: t.action, question: t.question, lowLabel: t.lowLabel, highLabel: t.highLabel,
+            reason: t.reason, startDate: start, duration: duration, seed: seed, isSample: true,
+            nextMorning: t.nextMorning, templateID: t.id
+        )
+    }
 
     static func experiments(now: Date, calendar: Calendar) -> [Experiment] {
         let today = calendar.startOfDay(for: now)
-        let phone = TemplateLibrary.all[0]
-        var finished = Experiment(
-            title: phone.title, action: phone.action, question: phone.question,
-            lowLabel: phone.lowLabel, highLabel: phone.highLabel, reason: phone.reason,
-            startDate: calendar.date(byAdding: .day, value: -18, to: today) ?? today,
-            duration: 14, seed: finishedSeed, isSample: true, nextMorning: phone.nextMorning
-        )
-        let doValues = [4, 5, 4, 4, 3, 5, 4]
-        let restValues = [3, 2, 3, 2, 4, 3, 2]
-        var doIndex = 0
-        var restIndex = 0
-        for (day, arm) in finished.schedule.enumerated() {
-            let rating: Int
-            switch arm {
-            case .doIt:
-                rating = doValues[doIndex % doValues.count]
-                doIndex += 1
-            case .rest:
-                rating = restValues[restIndex % restValues.count]
-                restIndex += 1
+        func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: today) ?? today }
+        var result: [Experiment] = []
+
+        // 1. 結果の出た実験（寝る前にスマホを置く → 効果あり）
+        if var finished = base("sleep-phone-away", start: day(-30), duration: 14, seed: finishedSeed) {
+            let doValues = [4, 5, 4, 4, 3, 5, 4]
+            let restValues = [3, 2, 3, 2, 4, 3, 2]
+            var doIndex = 0
+            var restIndex = 0
+            for (d, arm) in finished.schedule.enumerated() {
+                let rating: Int
+                switch arm {
+                case .doIt:
+                    rating = doValues[doIndex % doValues.count]
+                    doIndex += 1
+                case .rest:
+                    rating = restValues[restIndex % restValues.count]
+                    restIndex += 1
+                }
+                let recordedAt = calendar.date(byAdding: .hour, value: 31, to: finished.date(ofDay: d, calendar: calendar)) ?? today
+                finished.checkIns.append(CheckIn(day: d, rating: rating, followed: d != 9, note: "", recordedAt: recordedAt))
+                finished.revealedDays.append(d)
             }
-            // 1 日だけ、くじのとおりにできなかった日を入れる
-            let followed = day != 9
-            let recordedAt = calendar.date(byAdding: .hour, value: 31, to: finished.date(ofDay: day, calendar: calendar)) ?? today
-            finished.checkIns.append(CheckIn(day: day, rating: rating, followed: followed, note: "", recordedAt: recordedAt))
-            finished.revealedDays.append(day)
+            result.append(finished)
         }
 
-        let coffee = TemplateLibrary.all[1]
-        var active = Experiment(
-            title: coffee.title, action: coffee.action, question: coffee.question,
-            lowLabel: coffee.lowLabel, highLabel: coffee.highLabel, reason: coffee.reason,
-            startDate: calendar.date(byAdding: .day, value: -3, to: today) ?? today,
-            duration: 14, seed: activeSeed, isSample: true, nextMorning: coffee.nextMorning
-        )
-        // 3 日目までくじを引き、2 日目までの朝に記録した。3 日目の分（けさの記録）と、今日のくじが残っている
-        for day in 0..<3 {
-            active.revealedDays.append(day)
+        // 2. 途中でやめた実験（白黒表示 → 6 日でやめた）
+        if var ended = base("digital-grayscale", start: day(-14), duration: 14, seed: endedSeed) {
+            for d in 0..<6 {
+                let rating = ended.arm(day: d) == .doIt ? 3 : 3
+                let recordedAt = calendar.date(byAdding: .hour, value: 22, to: ended.date(ofDay: d, calendar: calendar)) ?? today
+                ended.checkIns.append(CheckIn(day: d, rating: rating + (d % 2), followed: true, note: "", recordedAt: recordedAt))
+                ended.revealedDays.append(d)
+            }
+            ended.endedEarly = true
+            result.append(ended)
         }
-        for day in 0..<2 {
-            let rating = active.arm(day: day) == .doIt ? 4 : 3
-            let recordedAt = calendar.date(byAdding: .hour, value: 31, to: active.date(ofDay: day, calendar: calendar)) ?? today
-            active.checkIns.append(CheckIn(day: day, rating: rating, followed: true, note: "", recordedAt: recordedAt))
+
+        // 3. 進行中（昼食のあと歩く）：4 日目。2 日目の記録が抜けている。今日のくじはまだ
+        if var active = base("focus-lunch-walk", start: day(-3), duration: 14, seed: activeSeed) {
+            for d in [0, 2] {
+                let rating = active.arm(day: d) == .doIt ? 4 : 2
+                let recordedAt = calendar.date(byAdding: .hour, value: 22, to: active.date(ofDay: d, calendar: calendar)) ?? today
+                active.checkIns.append(CheckIn(day: d, rating: rating, followed: true, note: "", recordedAt: recordedAt))
+            }
+            active.revealedDays = [0, 1, 2]
+            result.append(active)
         }
-        return [finished, active]
+        return result
     }
 }
