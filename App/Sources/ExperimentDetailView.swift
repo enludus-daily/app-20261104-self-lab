@@ -86,14 +86,8 @@ struct ExperimentDetailView: View {
     private func header(_ experiment: Experiment, finished: Bool, today: Int?, result: ExperimentResult) -> some View {
         NotebookPage(tilt: -0.4) {
             VStack(alignment: .leading, spacing: Space.m) {
-                HStack(alignment: .top) {
-                    LabelSticker(text: experiment.title, color: Palette.shu.accent, font: Typo.title(.title2))
-                    Spacer(minLength: Space.s)
-                    Image(systemName: TemplateLibrary.symbol(for: experiment))
-                        .font(.title2)
-                        .foregroundStyle(Palette.ai.deep)
-                        .accessibilityHidden(true)
-                }
+                LabelSticker(text: experiment.title, color: Palette.shu.accent, font: Typo.title(.title2))
+                    .padding(.trailing, Space.xl)
                 TagText(text: "\(experiment.startDate.formatted(.dateTime.month().day())) から \(experiment.duration) 日", color: Palette.ink)
                 Label(experiment.action, systemImage: "bolt")
                     .foregroundStyle(Palette.shu.deep)
@@ -142,8 +136,9 @@ struct ExperimentDetailView: View {
                         Text(ResultText.headline(result))
                             .font(Typo.title(.title))
                             .foregroundStyle(Palette.verdict(result.verdict))
-                            .minimumScaleFactor(0.7)
-                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                         if let difference = result.difference {
                             Text("差 \(ResultText.signed(difference))")
                                 .font(Typo.number(.title3))
@@ -328,8 +323,9 @@ struct ChancePage: View {
                         }
                 }
                 .chartYAxis(.hidden)
+                .padding(.top, Space.l)
                 .chartXAxisLabel("くじを入れ替えたときの差", alignment: .center)
-                .frame(height: 150)
+                .frame(height: 170)
                 .accessibilityLabel("くじを入れ替えたときの差の分布。あなたの差より外側は \(ResultText.percent(result.pValue ?? 1))")
                 if let p = result.pValue {
                     Text("朱色の棒（あなたの差と同じか、もっと大きい差）は全体の \(ResultText.percent(p))。\(ResultText.analogy(p))")

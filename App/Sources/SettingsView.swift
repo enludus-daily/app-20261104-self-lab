@@ -18,7 +18,7 @@ struct SettingsView: View {
                             Text("くじを引く・点数を選ぶ・記録する・ハンコが押されるときに震えます。")
                                 .font(.caption).foregroundStyle(Palette.inkSoft)
                             Picker("見た目", selection: $appearance) {
-                                Text("端末に合わせる").tag(0)
+                                Text("自動").tag(0)
                                 Text("ライト").tag(1)
                                 Text("ダーク").tag(2)
                             }

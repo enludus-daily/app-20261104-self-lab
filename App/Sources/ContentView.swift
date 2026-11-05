@@ -168,7 +168,7 @@ struct ContentView: View {
             newRequest = NewExperimentSeed(category: .sleep)
         case .settings:
             showingSettings = true
-        case .launch, .onboarding, .empty, nil:
+        case .launch, .home, .onboarding, .empty, nil:
             break
         }
     }
@@ -184,7 +184,7 @@ extension View {
 
 /// CI のスクリーンショットで開く画面（起動引数 -screenshotScene は UserDefaults の引数ドメインに入る）
 enum ScreenshotScene: String {
-    case launch, onboarding, reveal, checkin, detail, chance, share, ended, compose, catalog, settings, empty
+    case launch, home, onboarding, reveal, checkin, detail, chance, share, ended, compose, catalog, settings, empty
 
     static var current: ScreenshotScene? {
         UserDefaults.standard.string(forKey: "screenshotScene").flatMap(ScreenshotScene.init(rawValue:))
@@ -298,6 +298,7 @@ struct TodayPage: View {
     let onOpen: () -> Void
 
     @State private var drawRequest = 0
+    @AppStorage("drawnOnce") private var drawnOnce = false
 
     var body: some View {
         let today = experiment.today(on: now, calendar: calendar)
@@ -333,12 +334,18 @@ struct TodayPage: View {
                 if let today, let arm = experiment.arm(day: today) {
                     let revealed = experiment.isRevealed(day: today)
                     HStack(alignment: .bottom, spacing: Space.l) {
-                        LotteryBox(arm: arm, revealed: revealed, drawRequest: drawRequest, width: 84) { onDraw(today) }
+                        LotteryBox(arm: arm, revealed: revealed, drawRequest: drawRequest, width: 84) {
+                            drawnOnce = true
+                            onDraw(today)
+                        }
                         if revealed {
                             ResultSlip(experiment: experiment, arm: arm, day: today) { onRecord(today) }
                                 .transition(.asymmetric(insertion: .scale(scale: 0.6, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
                         } else {
                             VStack(alignment: .leading, spacing: Space.s) {
+                                if !drawnOnce {
+                                    CoachBubble(text: "筒を押すと、振ってくじが出ます")
+                                }
                                 Text("今日はどっち？")
                                     .font(Typo.title(.title3))
                                     .foregroundStyle(Palette.ink)
@@ -409,6 +416,10 @@ struct ResultSlip: View {
             Text(arm == .doIt ? experiment.action : "きょうはお休み。いつもどおりに過ごします。")
                 .font(.footnote)
                 .foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("実験メモ：\(LabNotes.note(seed: experiment.seed, day: day))")
+                .font(.system(.caption, design: .serif).italic())
+                .foregroundStyle(Palette.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
             if experiment.nextMorning {
                 Label("明日の朝に記録します", systemImage: "sunrise")
@@ -548,5 +559,86 @@ struct DetailPlaceholder: View {
             .frame(maxWidth: 520)
             .padding(Space.xl)
         }
+    }
+}
+
+/// 初めて触る所への案内（吹き出し。左を指す）
+struct CoachBubble: View {
+    let text: String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Triangle()
+                .fill(Palette.ink)
+                .frame(width: 8, height: 12)
+                .rotationEffect(.degrees(-90))
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Palette.paper)
+                .padding(.horizontal, Space.s)
+                .padding(.vertical, Space.xs + 2)
+                .background(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).fill(Palette.ink))
+        }
+        .liftedShadow()
+        .offset(x: pulse ? -4 : 0)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulse = true }
+        }
+        .accessibilityLabel("案内：\(text)")
+    }
+}
+
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// くじの紙片の「実験メモ」（小さな驚き。種と日で決まる）
+enum LabNotes {
+    static let all: [String] = [
+        "記録は、続けた日より正直な日のほうが役に立つ。",
+        "やすむ日も、立派な実験の一部です。",
+        "くじは公平。あなたの思い込みからも、気分からも。",
+        "1 日の点数は気にしすぎない。くらべるのは 2 つの平均です。",
+        "迷ったら、真ん中の 3 をつけていい。",
+        "科学者もまず、小さな問いから始めました。",
+        "うまくいかなかった日も、データです。",
+        "同じ質問を同じ時間に聞くと、答えがそろいます。",
+        "効かないと分かるのも、立派な結果です。",
+        "今日の自分を、きのうの自分とくらべる実験です。",
+        "記録の時刻をそろえると、くらべやすくなります。",
+        "メモは一言で十分。あとで読むと発見があります。",
+        "やる日は、いつもよりほんの少しだけ丁寧に。",
+        "やすむ日は「いつもどおり」がいちばんの仕事。",
+        "結果の前に、手を止めずにもう 1 日。",
+        "偶然を見分けるには、日数が味方です。",
+        "ハンコは最後の日のお楽しみ。",
+        "記録表のマスが、少しずつ色づいていきます。",
+        "実験ノートの棚は、あなたの取扱説明書になります。",
+        "思いつきを確かめる人は、意外と少ない。",
+        "小さな差でも、続ければ見えてきます。",
+        "「なんとなく」を数字にすると、人にも話しやすくなります。",
+        "今日のくじは、今日だけのもの。",
+        "実験の途中で条件を変えないのがコツです。",
+        "朝と夜で気分は変わる。だから同じ時間に聞きます。",
+        "やる日にできなかったら、正直に「できなかった」で。",
+        "1 つの実験に 1 つの問い。欲張らないのがコツ。",
+        "ノートの余白は、次の実験のアイデア置き場。",
+        "続けた日数より、確かめた数を誇りに。",
+        "今日の記録が、何日かあとの答えになります。",
+    ]
+
+    static func note(seed: UInt64, day: Int) -> String {
+        var rng = SplitMix64(state: seed &+ UInt64(max(day, 0)) &* 0x9E37_79B9)
+        return all[Int(rng.next() % UInt64(all.count))]
     }
 }

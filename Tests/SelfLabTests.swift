@@ -182,6 +182,14 @@ struct WordingTests {
         #expect(NotebookSpine.verticalTitle("寝る1時間前にスマホを置く").hasSuffix("…"))
     }
 
+    @Test func labNotesAreManyAndStable() {
+        #expect(LabNotes.all.count >= 30)
+        #expect(Set(LabNotes.all).count == LabNotes.all.count)
+        #expect(LabNotes.note(seed: 42, day: 3) == LabNotes.note(seed: 42, day: 3))
+        let notes = Set((0..<14).map { LabNotes.note(seed: 42, day: $0) })
+        #expect(notes.count > 5)
+    }
+
     @Test func ratingTiersIncrease() {
         let tiers = (1...5).map(Palette.ratingOpacity)
         #expect(tiers == tiers.sorted())
