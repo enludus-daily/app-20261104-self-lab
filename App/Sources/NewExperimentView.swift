@@ -70,9 +70,9 @@ struct NewExperimentView: View {
     }
 
     private var worryPage: some View {
-        NotebookPage(tilt: -0.4) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
-                LabelSticker(text: "気になること・ためしたいこと", color: Palette.marker.accent, font: Typo.title(.headline))
+                PageTitle(text: "気になること・ためしたいこと", font: Typo.title(.headline))
                 TextField("例：午後になると眠くて集中できない", text: $worry, axis: .vertical)
                     .lineLimit(2...4)
                     .padding(Space.m)
@@ -101,7 +101,7 @@ struct NewExperimentView: View {
                 if let notice {
                     Label(notice, systemImage: "exclamationmark.circle")
                         .font(.caption)
-                        .foregroundStyle(Palette.shu.deep)
+                        .foregroundStyle(Palette.peach.deep)
                 }
             }
         }
@@ -122,7 +122,7 @@ struct NewExperimentView: View {
             }
             ForEach(TemplateLibrary.templates(in: category)) { template in
                 TemplateStrip(template: template, expanded: expanded == template.id) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    withAnimation(.easeOut(duration: 0.3)) {
                         expanded = expanded == template.id ? nil : template.id
                     }
                 } onChoose: {
@@ -138,15 +138,14 @@ struct NewExperimentView: View {
             withAnimation(.snappy) { category = item }
         } label: {
             Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(selected ? Color.white : Palette.ink)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(selected ? Palette.sky.deep : Palette.ink)
                 .padding(.horizontal, Space.m)
                 .frame(minHeight: 40)
-                .background(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous).fill(selected ? Palette.ai.deep : Palette.label))
-                .overlay(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous).strokeBorder(Palette.line, lineWidth: selected ? 0 : 1))
+                .background(RoundedRectangle(cornerRadius: Radius.button, style: .continuous).fill(selected ? Palette.sky.soft : Palette.label))
+                .overlay(RoundedRectangle(cornerRadius: Radius.button, style: .continuous).strokeBorder(selected ? Palette.sky.accent : Palette.line, lineWidth: 0.6))
         }
         .buttonStyle(.plain)
-        .haptic(.selection, trigger: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -193,23 +192,22 @@ struct SuggestionStrip: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 HStack(spacing: Space.s) {
                     Image(systemName: draft.source == .model ? "apple.intelligence" : (template?.symbol ?? "flask"))
-                        .foregroundStyle(Palette.ai.deep)
+                        .foregroundStyle(Palette.sky.deep)
                     Text(draft.title).font(Typo.title(.headline)).foregroundStyle(Palette.ink).multilineTextAlignment(.leading)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.right").foregroundStyle(Palette.inkSoft)
                 }
-                Label(draft.action, systemImage: "bolt").font(.subheadline).foregroundStyle(Palette.shu.deep)
+                Label(draft.action, systemImage: "bolt").font(.subheadline).foregroundStyle(Palette.peach.deep)
                 Label(draft.question + (draft.nextMorning ? "（翌朝）" : ""), systemImage: draft.nextMorning ? "sunrise" : "moon.stars")
                     .font(.subheadline)
-                    .foregroundStyle(Palette.ai.deep)
+                    .foregroundStyle(Palette.sky.deep)
             }
             .multilineTextAlignment(.leading)
             .padding(Space.m)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Palette.paper)
-            .overlay(alignment: .leading) { Rectangle().fill(Palette.marker.accent).frame(width: 4) }
             .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
-            .paperShadow()
+            .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.line, lineWidth: 0.6))
         }
         .buttonStyle(.plain)
     }
@@ -228,7 +226,7 @@ struct TemplateStrip: View {
                 HStack(alignment: .top, spacing: Space.m) {
                     Image(systemName: template.symbol)
                         .font(.title3)
-                        .foregroundStyle(Palette.ai.deep)
+                        .foregroundStyle(Palette.sky.deep)
                         .frame(width: 30)
                     VStack(alignment: .leading, spacing: Space.xs) {
                         Text(template.title).font(Typo.title(.subheadline)).foregroundStyle(Palette.ink)
@@ -250,10 +248,10 @@ struct TemplateStrip: View {
             .accessibilityHint(expanded ? "閉じる" : "なぜ・コツ・落とし穴を開く")
             if expanded {
                 VStack(alignment: .leading, spacing: Space.s) {
-                    Label(template.action, systemImage: "bolt").foregroundStyle(Palette.shu.deep)
+                    Label(template.action, systemImage: "bolt").foregroundStyle(Palette.peach.deep)
                     Text(template.reason).foregroundStyle(Palette.ink)
                     Label(template.tip, systemImage: "lightbulb").foregroundStyle(Palette.ink)
-                    Label(template.pitfall, systemImage: "exclamationmark.triangle").foregroundStyle(Palette.shu.deep)
+                    Label(template.pitfall, systemImage: "exclamationmark.triangle").foregroundStyle(Palette.peach.deep)
                     Button(action: onChoose) {
                         Label("この実験にする", systemImage: "flask")
                     }
@@ -267,7 +265,7 @@ struct TemplateStrip: View {
         .padding(Space.m)
         .background(Palette.paper)
         .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.line, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.line, lineWidth: 0.6))
     }
 }
 
@@ -275,7 +273,6 @@ struct TemplateStrip: View {
 struct DraftEditor: View {
     @State private var draft: ExperimentDraft
     @State private var days: Int
-    @State private var shake: CGFloat = 0
     @State private var failures = 0
     @State private var problem: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -291,7 +288,7 @@ struct DraftEditor: View {
         ScrollView {
             NotebookPage {
                 VStack(alignment: .leading, spacing: Space.m) {
-                    LabelSticker(text: draft.title.isEmpty ? "新しい実験" : draft.title, color: Palette.shu.accent)
+                    PageTitle(text: draft.title.isEmpty ? "新しい実験" : draft.title)
                     field("題", text: $draft.title, prompt: "例：昼食のあと 10 分歩く")
                     field("やる日にすること", text: $draft.action, prompt: "例：昼食を食べ終えたら 10 分歩く")
                     field("自分に聞くこと（大きいほどよい）", text: $draft.question, prompt: "例：きょうの午後の集中は？")
@@ -301,7 +298,7 @@ struct DraftEditor: View {
                     }
                     Toggle("効果は翌朝に分かる（翌朝に記録する）", isOn: $draft.nextMorning)
                         .font(.subheadline)
-                        .tint(Palette.ai.deep)
+                        .tint(Palette.sky.deep)
                     Picker("日数", selection: $days) {
                         ForEach(Experiment.durations, id: \.self) { value in
                             Text(value == 14 ? "\(value) 日（しっかり）" : "\(value) 日（短め）").tag(value)
@@ -314,14 +311,13 @@ struct DraftEditor: View {
                     if let problem {
                         Text(problem)
                             .font(.footnote.weight(.semibold))
-                            .foregroundStyle(Palette.shu.deep)
+                            .foregroundStyle(Palette.peach.deep)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Button(action: start) {
                         Label("今日から始める", systemImage: "flask.fill")
                     }
                     .buttonStyle(StampButtonStyle())
-                    .modifier(ShakeEffect(phase: shake))
                 }
             }
             .padding(Space.l)
@@ -332,7 +328,6 @@ struct DraftEditor: View {
         .background(Palette.desk.ignoresSafeArea())
         .navigationTitle("実験の形")
         .navigationBarTitleDisplayMode(.inline)
-        .haptic(.error, trigger: failures)
     }
 
     private func start() {
@@ -340,10 +335,10 @@ struct DraftEditor: View {
             onStart(cleaned, days)
             return
         }
-        problem = DraftProblem.message(for: draft)
-        failures += 1
-        guard !reduceMotion else { return }
-        withAnimation(.linear(duration: 0.42)) { shake += 1 }
+        withAnimation(.easeOut(duration: 0.25)) {
+            problem = DraftProblem.message(for: draft)
+            failures += 1
+        }
     }
 
     private func field(_ title: String, text: Binding<String>, prompt: String) -> some View {

@@ -2,70 +2,56 @@ import SwiftUI
 
 // おみくじの筒：振ると、くじの棒が出る。今日の「やる日」「やすむ日」の割り付けになる。
 
-/// 六角の筒（正面と左右の面、上の穴）
+/// 六角の筒（淡い面と細い線）
 struct OmikujiTube: View {
     var body: some View {
         GeometryReader { proxy in
             let w = proxy.size.width
             let h = proxy.size.height
             let top = h * 0.1
+            let stroke = StrokeStyle(lineWidth: 0.8, lineJoin: .round)
+            let sides = Path { p in
+                p.move(to: CGPoint(x: 0, y: top))
+                p.addLine(to: CGPoint(x: w * 0.18, y: top + h * 0.03))
+                p.addLine(to: CGPoint(x: w * 0.18, y: h))
+                p.addLine(to: CGPoint(x: 0, y: h - h * 0.03))
+                p.closeSubpath()
+                p.move(to: CGPoint(x: w, y: top))
+                p.addLine(to: CGPoint(x: w * 0.82, y: top + h * 0.03))
+                p.addLine(to: CGPoint(x: w * 0.82, y: h))
+                p.addLine(to: CGPoint(x: w, y: h - h * 0.03))
+                p.closeSubpath()
+            }
+            let front = Path(CGRect(x: w * 0.18, y: top + h * 0.03, width: w * 0.64, height: h - top - h * 0.03))
+            let lid = Path { p in
+                p.move(to: CGPoint(x: 0, y: top))
+                p.addLine(to: CGPoint(x: w * 0.18, y: top - h * 0.05))
+                p.addLine(to: CGPoint(x: w * 0.82, y: top - h * 0.05))
+                p.addLine(to: CGPoint(x: w, y: top))
+                p.addLine(to: CGPoint(x: w * 0.82, y: top + h * 0.03))
+                p.addLine(to: CGPoint(x: w * 0.18, y: top + h * 0.03))
+                p.closeSubpath()
+            }
             ZStack(alignment: .topLeading) {
-                // 左右の面（暗い木）
-                Path { p in
-                    p.move(to: CGPoint(x: 0, y: top))
-                    p.addLine(to: CGPoint(x: w * 0.18, y: top + h * 0.03))
-                    p.addLine(to: CGPoint(x: w * 0.18, y: h))
-                    p.addLine(to: CGPoint(x: 0, y: h - h * 0.03))
-                    p.closeSubpath()
-                    p.move(to: CGPoint(x: w, y: top))
-                    p.addLine(to: CGPoint(x: w * 0.82, y: top + h * 0.03))
-                    p.addLine(to: CGPoint(x: w * 0.82, y: h))
-                    p.addLine(to: CGPoint(x: w, y: h - h * 0.03))
-                    p.closeSubpath()
-                }
-                .fill(Palette.wood.deep)
-                // 正面
-                Path { p in
-                    p.addRect(CGRect(x: w * 0.18, y: top + h * 0.03, width: w * 0.64, height: h - top - h * 0.03))
-                }
-                .fill(Palette.wood.accent)
-                // 木目
-                Path { p in
-                    for i in 0..<4 {
-                        let x = w * (0.28 + CGFloat(i) * 0.14)
-                        p.move(to: CGPoint(x: x, y: top + h * 0.08))
-                        p.addCurve(
-                            to: CGPoint(x: x + w * 0.02, y: h * 0.96),
-                            control1: CGPoint(x: x - w * 0.03, y: h * 0.4),
-                            control2: CGPoint(x: x + w * 0.05, y: h * 0.7)
-                        )
-                    }
-                }
-                .stroke(Palette.wood.deep.opacity(0.35), lineWidth: 1)
-                // 上の面と穴
-                Path { p in
-                    p.move(to: CGPoint(x: 0, y: top))
-                    p.addLine(to: CGPoint(x: w * 0.18, y: top - h * 0.05))
-                    p.addLine(to: CGPoint(x: w * 0.82, y: top - h * 0.05))
-                    p.addLine(to: CGPoint(x: w, y: top))
-                    p.addLine(to: CGPoint(x: w * 0.82, y: top + h * 0.03))
-                    p.addLine(to: CGPoint(x: w * 0.18, y: top + h * 0.03))
-                    p.closeSubpath()
-                }
-                .fill(Palette.wood.decor)
+                sides.fill(Palette.stone.accent)
+                sides.stroke(Palette.stone.deep.opacity(0.7), style: stroke)
+                front.fill(Palette.stone.paper)
+                front.stroke(Palette.stone.deep.opacity(0.7), style: stroke)
+                lid.fill(Palette.stone.soft)
+                lid.stroke(Palette.stone.deep.opacity(0.7), style: stroke)
                 Ellipse()
-                    .fill(Palette.ink.opacity(0.8))
-                    .frame(width: w * 0.22, height: h * 0.035)
+                    .fill(Palette.ink.opacity(0.45))
+                    .frame(width: w * 0.2, height: h * 0.03)
                     .position(x: w / 2, y: top - h * 0.01)
                 // 正面の札「みくじ」
                 Text("み\nく\nじ")
-                    .font(.system(size: w * 0.17, weight: .heavy, design: .serif))
-                    .foregroundStyle(Palette.shu.deep)
-                    .lineSpacing(-4)
+                    .font(.system(size: w * 0.14, weight: .regular, design: .serif))
+                    .foregroundStyle(Palette.sky.deep)
+                    .lineSpacing(-2)
                     .padding(.vertical, 6)
-                    .frame(width: w * 0.3)
+                    .frame(width: w * 0.28)
                     .background(Palette.label)
-                    .overlay(Rectangle().strokeBorder(Palette.shu.deep, lineWidth: 1.5).padding(2))
+                    .overlay(Rectangle().strokeBorder(Palette.sky.deep.opacity(0.6), lineWidth: 0.6).padding(2))
                     .position(x: w / 2, y: h * 0.52)
             }
         }
@@ -73,7 +59,7 @@ struct OmikujiTube: View {
     }
 }
 
-/// くじの棒（先に色、やる／やすむの字）
+/// くじの棒（先に淡い色、やる／やすむの字）
 struct KujiStick: View {
     let arm: Arm
 
@@ -81,17 +67,17 @@ struct KujiStick: View {
         let swatch = Palette.swatch(for: arm)
         VStack(spacing: 0) {
             Text(arm == .doIt ? "や\nる" : "や\nす\nむ")
-                .font(.system(size: 11, weight: .heavy, design: .serif))
-                .foregroundStyle(.white)
+                .font(.system(size: 10, weight: .medium, design: .serif))
+                .foregroundStyle(swatch.deep)
                 .lineSpacing(-3)
-                .frame(width: 16, height: 46)
-                .background(swatch.deep)
+                .frame(width: 14, height: 44)
+                .background(swatch.accent.opacity(0.6))
             Rectangle()
-                .fill(Palette.wood.decor)
-                .frame(width: 16, height: 70)
+                .fill(Palette.stone.paper)
+                .frame(width: 14, height: 70)
         }
         .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(Palette.wood.deep.opacity(0.6), lineWidth: 0.8))
+        .overlay(RoundedRectangle(cornerRadius: 3, style: .continuous).strokeBorder(Palette.stone.deep.opacity(0.6), lineWidth: 0.6))
         .accessibilityHidden(true)
     }
 }
@@ -118,7 +104,7 @@ struct OmikujiAssembly: View {
     }
 }
 
-/// 今日のくじ。筒を押すと振って（左右の減衰する揺れ 0.65 秒）、棒が出る。
+/// 今日のくじ。筒を押すと少し浮いて小さく揺れ（数度・0.5 秒）、棒がそっと出る。
 struct LotteryBox: View {
     let arm: Arm
     let revealed: Bool
@@ -137,22 +123,20 @@ struct LotteryBox: View {
                     content.rotationEffect(.degrees(angle), anchor: .bottom)
                 } keyframes: { _ in
                     KeyframeTrack {
-                        CubicKeyframe(16, duration: 0.09)
-                        CubicKeyframe(-14, duration: 0.11)
-                        CubicKeyframe(11, duration: 0.11)
-                        CubicKeyframe(-8, duration: 0.1)
-                        CubicKeyframe(5, duration: 0.09)
-                        CubicKeyframe(-2, duration: 0.07)
-                        CubicKeyframe(0, duration: 0.08)
+                        CubicKeyframe(3, duration: 0.12)
+                        CubicKeyframe(-3, duration: 0.14)
+                        CubicKeyframe(2, duration: 0.12)
+                        CubicKeyframe(0, duration: 0.12)
                     }
                 }
+                .scaleEffect(drawing ? 1.05 : 1)
+                .animation(.easeOut(duration: 0.25), value: drawing)
                 .contentShape(Rectangle())
                 .onTapGesture(perform: draw)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(revealed ? "今日のくじ：\(arm.title)" : "おみくじの筒。押すと今日のくじを引きます")
                 .accessibilityAddTraits(revealed ? [] : .isButton)
                 .accessibilityAction { draw() }
-                .haptic(.impact(weight: .medium), trigger: shakes)
                 .onChange(of: drawRequest) { _, _ in draw() }
     }
 
@@ -165,8 +149,8 @@ struct LotteryBox: View {
         drawing = true
         shakes += 1
         Task {
-            try? await Task.sleep(for: .milliseconds(680))
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.58)) { onDraw() }
+            try? await Task.sleep(for: .milliseconds(520))
+            withAnimation(.easeOut(duration: 0.35)) { onDraw() }
             drawing = false
         }
     }
@@ -181,9 +165,9 @@ struct OmikujiDemo: View {
 
         var angle: Double {
             switch self {
-            case .left: 14
-            case .right: -12
-            case .left2: 7
+            case .left: 3
+            case .right: -3
+            case .left2: 2
             default: 0
             }
         }
@@ -198,8 +182,8 @@ struct OmikujiDemo: View {
             } animation: { step in
                 switch step {
                 case .rest: .easeInOut(duration: 0.9)
-                case .left, .right, .left2: .easeInOut(duration: 0.13)
-                case .out: .spring(response: 0.5, dampingFraction: 0.58)
+                case .left, .right, .left2: .easeInOut(duration: 0.16)
+                case .out: .easeOut(duration: 0.35)
                 case .hold: .easeInOut(duration: 1.4)
                 }
             }

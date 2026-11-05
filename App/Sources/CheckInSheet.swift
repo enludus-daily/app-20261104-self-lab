@@ -12,7 +12,6 @@ struct CheckInSheet: View {
     @State private var followed = true
     @State private var note = ""
     @State private var saved = false
-    @State private var shake: CGFloat = 0
     @State private var failures = 0
 
     init(experiment: Experiment, day: Int, onSave: @escaping (Int, Bool, String) -> Void) {
@@ -30,16 +29,16 @@ struct CheckInSheet: View {
         let swatch = Palette.swatch(for: arm)
         NavigationStack {
             ScrollView {
-                NotebookPage(showsClip: true) {
+                NotebookPage {
                     VStack(alignment: .leading, spacing: Space.l) {
                         HStack(spacing: Space.s) {
                             TagText(text: experiment.nextMorning ? "\(day + 1) 日目の翌朝" : "\(day + 1) 日目の夜", color: Palette.ink)
                             Text(arm.title)
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(swatch.deep)
                                 .padding(.horizontal, Space.s)
                                 .padding(.vertical, 2)
-                                .background(RoundedRectangle(cornerRadius: Radius.tag).fill(swatch.deep))
+                                .background(RoundedRectangle(cornerRadius: Radius.tag).fill(swatch.soft))
                         }
                         Text(experiment.question)
                             .font(Typo.title(.title))
@@ -47,7 +46,6 @@ struct CheckInSheet: View {
                             .fixedSize(horizontal: false, vertical: true)
 
                         ratingRow(swatch: swatch)
-                            .modifier(ShakeEffect(phase: shake))
 
                         HStack {
                             Text("1 \(experiment.lowLabel)")
@@ -80,11 +78,11 @@ struct CheckInSheet: View {
                         if rating == nil && failures > 0 {
                             Text("先に 1〜5 のどれかに丸をつけてください。")
                                 .font(.footnote.weight(.semibold))
-                                .foregroundStyle(Palette.shu.deep)
+                                .foregroundStyle(Palette.peach.deep)
                         }
 
                         Button(action: save) {
-                            Label(saved ? "記録しました" : "記録する", systemImage: saved ? "checkmark.seal.fill" : "pencil.and.list.clipboard")
+                            Label(saved ? "記録しました" : "記録する", systemImage: saved ? "checkmark" : "pencil")
                         }
                         .buttonStyle(StampButtonStyle(swatch: swatch))
                         .disabled(saved)
@@ -94,7 +92,6 @@ struct CheckInSheet: View {
                 .padding(.top, Space.l)
             }
             .background(Palette.desk.ignoresSafeArea())
-            .overlay { if saved { PaperBits() } }
             .navigationTitle(experiment.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -103,7 +100,7 @@ struct CheckInSheet: View {
                 }
             }
             .haptic(.selection, trigger: rating)
-            .haptic(.error, trigger: failures)
+            .haptic(.success, trigger: saved)
         }
     }
 
@@ -120,15 +117,14 @@ struct CheckInSheet: View {
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                            .fill(swatch.accent.opacity(selected ? Palette.ratingOpacity(value) * 0.35 : 0))
+                            .fill(swatch.soft.opacity(selected ? 1 : 0))
                         Text("\(value)")
-                            .font(.system(.title, design: .serif).weight(.bold).monospacedDigit())
+                            .font(.system(.title, design: .serif).weight(.regular).monospacedDigit())
                             .foregroundStyle(selected ? swatch.deep : Palette.ink)
-                            .scaleEffect(selected ? 1.15 : 1)
                         // 鉛筆の丸（trim で描く）
                         Ellipse()
                             .trim(from: 0, to: selected ? 1 : 0)
-                            .stroke(swatch.deep, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .stroke(swatch.deep, style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
                             .rotationEffect(.degrees(-100))
                             .scaleEffect(x: 1.05, y: 0.9)
                             .padding(4)
@@ -146,9 +142,7 @@ struct CheckInSheet: View {
 
     private func save() {
         guard let rating else {
-            failures += 1
-            if reduceMotion { return }
-            withAnimation(.linear(duration: 0.42)) { shake += 1 }
+            withAnimation(.easeOut(duration: 0.25)) { failures += 1 }
             return
         }
         onSave(rating, followed, note)

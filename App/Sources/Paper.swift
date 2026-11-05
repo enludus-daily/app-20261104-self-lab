@@ -22,12 +22,12 @@ struct GridPaper: View {
                 grid.addLine(to: CGPoint(x: size.width, y: y))
                 y += spacing
             }
-            context.stroke(grid, with: .color(Palette.grid), lineWidth: 0.5)
+            context.stroke(grid, with: .color(Palette.grid), lineWidth: 0.6)
             if let marginX {
                 var margin = Path()
                 margin.move(to: CGPoint(x: marginX, y: 0))
                 margin.addLine(to: CGPoint(x: marginX, y: size.height))
-                context.stroke(margin, with: .color(Palette.margin), lineWidth: 1)
+                context.stroke(margin, with: .color(Palette.margin), lineWidth: 0.6)
             }
         }
         .accessibilityHidden(true)
@@ -61,12 +61,14 @@ struct PaperClip: Shape {
 /// 実験ノートの 1 ページ：方眼の紙・余白の赤線・右上のクリップ
 struct NotebookPage<Content: View>: View {
     var tilt: Double = 0
-    var showsClip = true
+    var showsClip = false
+    /// 方眼（飾り）は主役のページだけ
+    var grid = false
     @ViewBuilder var content: Content
 
     var body: some View {
         content
-            .padding(.leading, 40)
+            .padding(.leading, grid ? 40 : Space.xl)
             .padding(.trailing, Space.l)
             .padding(.vertical, Space.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,15 +76,19 @@ struct NotebookPage<Content: View>: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: Radius.page, style: .continuous)
                         .fill(Palette.paper)
-                    GridPaper()
-                        .clipShape(RoundedRectangle(cornerRadius: Radius.page, style: .continuous))
+                    if grid {
+                        GridPaper()
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.page, style: .continuous))
+                    }
+                    RoundedRectangle(cornerRadius: Radius.page, style: .continuous)
+                        .strokeBorder(Palette.line, lineWidth: 0.6)
                 }
                 .paperShadow()
             }
             .overlay(alignment: .topTrailing) {
                 if showsClip {
                     PaperClip()
-                        .stroke(Palette.clip, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                        .stroke(Palette.clip, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                         .frame(width: 20, height: 52)
                         .rotationEffect(.degrees(6))
                         .offset(x: -28, y: -18)
@@ -96,7 +102,7 @@ struct NotebookPage<Content: View>: View {
 /// ラベルシール：左に色の帯、少し傾けて貼る
 struct LabelSticker: View {
     let text: String
-    var color: Color = Palette.shu.accent
+    var color: Color = Palette.peach.accent
     var tilt: Double = -2
     var font: Font = Typo.title(.title3)
 
@@ -104,7 +110,7 @@ struct LabelSticker: View {
         HStack(spacing: 0) {
             Rectangle()
                 .fill(color)
-                .frame(width: 6)
+                .frame(width: 3)
             Text(text)
                 .font(font)
                 .foregroundStyle(Palette.ink)
@@ -118,10 +124,24 @@ struct LabelSticker: View {
         .clipShape(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: Radius.tag, style: .continuous)
-                .strokeBorder(Palette.line, lineWidth: 0.8)
+                .strokeBorder(Palette.line, lineWidth: 0.6)
         )
-        .edgeShadow()
         .rotationEffect(.degrees(tilt))
+    }
+}
+
+/// ページの見出し（飾りなし。セリフ・medium）
+struct PageTitle: View {
+    let text: String
+    var color: Color = .clear
+    var font: Font = Typo.title(.title3)
+
+    var body: some View {
+        Text(text)
+            .font(font)
+            .foregroundStyle(Palette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -164,7 +184,7 @@ struct InkGrain: View {
     }
 }
 
-/// 結果のハンコ。効果あり＝朱の二重丸、途中＝鉛筆の点線
+/// 結果のハンコ：細い線の二重丸を、紙の上に軽く押した感じ（少しかすれて透ける）。途中は点線
 struct Hanko: View {
     let verdict: ExperimentResult.Verdict
     var size: CGFloat = 120
@@ -176,24 +196,26 @@ struct Hanko: View {
         ZStack {
             if inProgress || verdict == .notEnough {
                 Circle()
-                    .stroke(color, style: StrokeStyle(lineWidth: size * 0.03, dash: [size * 0.06, size * 0.045]))
+                    .stroke(color, style: StrokeStyle(lineWidth: max(1, size * 0.012), dash: [size * 0.04, size * 0.035]))
                     .padding(size * 0.02)
             } else {
-                Circle().strokeBorder(color, lineWidth: size * 0.05)
-                Circle().inset(by: size * 0.1).strokeBorder(color, lineWidth: size * 0.016)
+                Circle().strokeBorder(color, lineWidth: max(1, size * 0.018))
+                Circle().inset(by: size * 0.07).strokeBorder(color, lineWidth: max(0.6, size * 0.007))
             }
-            VStack(spacing: -size * 0.02) {
+            VStack(spacing: 0) {
                 Text(lines.0)
                 Text(lines.1)
             }
-            .font(.system(size: size * 0.2, weight: .heavy, design: .serif))
+            .font(.system(size: size * 0.17, weight: .medium, design: .serif))
+            .kerning(size * 0.01)
             .foregroundStyle(color)
             .minimumScaleFactor(0.6)
-            .padding(size * 0.14)
+            .padding(size * 0.16)
         }
         .frame(width: size, height: size)
-        .mask(InkGrain(seed: 11, count: Int(size * 1.4)))
-        .rotationEffect(.degrees(-12))
+        .opacity(0.88)
+        .mask(InkGrain(seed: 11, count: Int(size * 0.6)))
+        .rotationEffect(.degrees(-6))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("ハンコ：\(lines.0)\(lines.1)")
     }
@@ -219,10 +241,10 @@ struct NotebookSpine: View {
         let color = Palette.verdict(verdict)
         VStack(spacing: Space.s) {
             Rectangle()
-                .fill(color.opacity(0.85))
-                .frame(height: 10)
+                .fill(color.opacity(0.5))
+                .frame(height: 4)
             Text(Self.verticalTitle(experiment.title))
-                .font(.system(.caption, design: .serif).weight(.bold))
+                .font(.system(.caption, design: .serif).weight(.semibold))
                 .foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center)
                 .lineSpacing(-2)
@@ -230,7 +252,6 @@ struct NotebookSpine: View {
                 .frame(width: 30)
                 .background(Palette.label)
                 .clipShape(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous))
-                .edgeShadow()
             Spacer(minLength: 0)
             Hanko(verdict: verdict, size: 40, inProgress: false)
                 .padding(.bottom, Space.s)
@@ -238,14 +259,13 @@ struct NotebookSpine: View {
         .frame(width: 58, height: 210)
         .background(
             RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                .fill(index.isMultiple(of: 2) ? Palette.wood.soft : Palette.paper)
+                .fill(index.isMultiple(of: 2) ? Palette.sky.paper : Palette.paper)
         )
         .overlay(
             RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                .strokeBorder(Palette.line, lineWidth: 1)
+                .strokeBorder(Palette.line, lineWidth: 0.6)
         )
         .paperShadow()
-        .rotationEffect(.degrees(index.isMultiple(of: 3) ? -2 : (index.isMultiple(of: 2) ? 1.5 : 0)), anchor: .bottom)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(experiment.title)、\(ResultText.headline(Analyzer.result(for: experiment)))")
     }
@@ -296,28 +316,29 @@ struct RecordCell: View {
             RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous)
                 .fill(Palette.paper)
             RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous)
-                .strokeBorder(Palette.grid, lineWidth: 1)
+                .strokeBorder(Palette.grid, lineWidth: 0.6)
             if let checkIn {
                 if checkIn.followed {
                     RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous)
                         .fill(swatch.accent.opacity(Palette.ratingOpacity(checkIn.rating)))
-                        .transition(.scale(scale: 0.4).combined(with: .opacity))
+                        .transition(.opacity)
                 } else {
                     Hatch(color: swatch.accent.opacity(0.6))
                         .clipShape(RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous))
                 }
                 if !compact {
                     Text("\(checkIn.rating)")
-                        .font(.system(.headline, design: .serif).weight(.bold).monospacedDigit())
-                        .foregroundStyle(checkIn.followed && checkIn.rating >= 3 ? Color.white : Palette.ink)
+                        .font(.system(.subheadline, design: .serif).weight(.regular).monospacedDigit())
+                        .foregroundStyle(Palette.ink)
+                        .contentTransition(.numericText())
                 }
             } else if revealed {
                 RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous)
-                    .strokeBorder(swatch.accent, style: StrokeStyle(lineWidth: compact ? 1 : 1.5, dash: [3, 2]))
+                    .strokeBorder(swatch.deep.opacity(0.6), style: StrokeStyle(lineWidth: compact ? 0.8 : 1, dash: [3, 2]))
                 if !compact {
-                    Text(arm == .doIt ? "や" : "休")
-                        .font(.system(.subheadline, design: .serif).weight(.bold))
-                        .foregroundStyle(swatch.accent)
+                    Image(systemName: arm == .doIt ? "sun.min" : "moon")
+                        .font(.caption)
+                        .foregroundStyle(swatch.deep)
                 }
             } else if !compact {
                 Text("\(day + 1)")
@@ -326,11 +347,11 @@ struct RecordCell: View {
             }
             if isToday {
                 RoundedRectangle(cornerRadius: compact ? 3 : Radius.tag, style: .continuous)
-                    .strokeBorder(Palette.marker.accent, lineWidth: compact ? 2 : 3)
+                    .strokeBorder(Palette.sky.deep, lineWidth: compact ? 1.2 : 1.5)
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .animation(.spring(response: 0.4, dampingFraction: 0.55), value: checkIn?.rating)
+        .animation(.easeOut(duration: 0.3), value: checkIn?.rating)
     }
 }
 
@@ -338,10 +359,10 @@ struct RecordCell: View {
 struct RecordLegend: View {
     var body: some View {
         HStack(spacing: Space.m) {
-            item(Palette.shu.accent, "やる日")
-            item(Palette.ai.accent, "やすむ日")
+            item(Palette.peach.accent, "やる日")
+            item(Palette.sky.accent, "やすむ日")
             HStack(spacing: 4) {
-                RoundedRectangle(cornerRadius: 2).strokeBorder(Palette.marker.accent, lineWidth: 2).frame(width: 12, height: 12)
+                RoundedRectangle(cornerRadius: 2).strokeBorder(Palette.sky.deep, lineWidth: 1.2).frame(width: 12, height: 12)
                 Text("今日")
             }
             HStack(spacing: 4) {
@@ -357,57 +378,8 @@ struct RecordLegend: View {
     private func item(_ color: Color, _ text: String) -> some View {
         HStack(spacing: 4) {
             RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 12, height: 12)
+            Image(systemName: text == "やる日" ? "sun.min" : "moon").font(.caption2)
             Text(text)
         }
-    }
-}
-
-/// 紙吹雪の代わりの「紙片」：固定の乱数で毎回同じ散り方（記録したとき）
-struct PaperBits: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var burst = false
-
-    private struct Bit {
-        let dx: CGFloat
-        let dy: CGFloat
-        let spin: Double
-        let color: Color
-        let size: CGFloat
-    }
-
-    private static let bits: [Bit] = {
-        var rng = SplitMix64(state: 2026)
-        let colors = [Palette.shu.accent, Palette.ai.accent, Palette.marker.accent, Palette.wood.accent]
-        return (0..<24).map { i in
-            let angle = Double(rng.next() % 360) * .pi / 180
-            let distance = CGFloat(rng.next() % 90) + 60
-            return Bit(
-                dx: CGFloat(cos(angle)) * distance,
-                dy: CGFloat(sin(angle)) * distance - 40,
-                spin: Double(rng.next() % 720) + 180,
-                color: colors[i % colors.count],
-                size: CGFloat(rng.next() % 6) + 6
-            )
-        }
-    }()
-
-    var body: some View {
-        ZStack {
-            if !reduceMotion {
-                ForEach(0..<Self.bits.count, id: \.self) { i in
-                    let bit = Self.bits[i]
-                    Rectangle()
-                        .fill(bit.color)
-                        .frame(width: bit.size, height: bit.size * 0.6)
-                        .rotationEffect(.degrees(burst ? bit.spin : 0))
-                        .offset(x: burst ? bit.dx : 0, y: burst ? bit.dy + 120 : 0)
-                        .opacity(burst ? 0 : 1)
-                        .animation(.easeOut(duration: 1.1).delay(Double(i % 6) * 0.03), value: burst)
-                }
-            }
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-        .onAppear { burst = true }
     }
 }

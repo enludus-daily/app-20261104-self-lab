@@ -40,62 +40,62 @@ struct Swatch: Sendable {
 }
 
 enum Palette {
-    // 紙とインク（真っ白・真っ黒にしない）
-    static let desk = Color(light: 0xECE7DC, dark: 0x131417)
-    static let paper = Color(light: 0xFBF9F3, dark: 0x1F2024)
-    static let grid = Color(light: 0xD5E1E6, dark: 0x2B333A)
-    static let margin = Color(light: 0xE8A19C, dark: 0x6B3A38)
-    static let ink = Color(light: 0x2A3038, dark: 0xECE6D8)
-    static let inkSoft = Color(light: 0x6F7884, dark: 0xA39C8E)
-    static let line = Color(light: 0xDCD5C5, dark: 0x3A3C42)
-    static let label = Color(light: 0xFFFEFA, dark: 0x2A2B30)
-    static let clip = Color(light: 0x9AA3AC, dark: 0x7C848C)
+    // 地と文字（StudyReel のトーン：ほぼ白の地・真っ黒にしない文字・細い線）
+    static let desk = Color(light: 0xF3F6F9, dark: 0x121417)
+    static let paper = Color(light: 0xFCFDFE, dark: 0x1B1E22)
+    static let grid = Color(light: 0xE3E9EF, dark: 0x262B31)
+    static let margin = Color(light: 0xF6D9CD, dark: 0x4A3630)
+    static let ink = Color(light: 0x2E3A46, dark: 0xE6EAEE)
+    static let inkSoft = Color(light: 0x8E9AA6, dark: 0x8E9AA6)
+    static let line = Color(light: 0xE3E9EF, dark: 0x2C3238)
+    static let label = Color(light: 0xFFFFFF, dark: 0x23272C)
+    static let clip = Color(light: 0xB8C4CF, dark: 0x5B6672)
 
-    /// やる日＝朱（ハンコの朱肉）
-    static let shu = Swatch(
-        accent: Color(light: 0xE0533D, dark: 0xEE6E58),
-        soft: Color(light: 0xFBE1D9, dark: 0x3D2420),
-        deep: Color(light: 0xB5341F, dark: 0xC2452F),
-        paper: Color(light: 0xFFF5F0, dark: 0x2A1F1D),
-        decor: Color(light: 0xF5C6A5, dark: 0x7A4E3A)
+    /// 主の 1 系統＝sky（やすむ日・ボタン・グラフ）
+    static let sky = Swatch(
+        accent: Color(light: 0x9EC3E2, dark: 0x6F96B8),
+        soft: Color(light: 0xE1EDF6, dark: 0x1E2A35),
+        deep: Color(light: 0x5E8DB8, dark: 0x5A87B0),
+        paper: Color(light: 0xF5F9FC, dark: 0x1A2028),
+        decor: Color(light: 0xCFE0EE, dark: 0x34475A)
     )
 
-    /// やすむ日＝藍
-    static let ai = Swatch(
-        accent: Color(light: 0x3F6FB0, dark: 0x7FA3D9),
-        soft: Color(light: 0xDEE8F5, dark: 0x1D2737),
-        deep: Color(light: 0x284F8A, dark: 0x3F6FB0),
-        paper: Color(light: 0xF4F7FC, dark: 0x1C212A),
-        decor: Color(light: 0xBDD2EC, dark: 0x3B4E6B)
+    /// 差し色＝peach（やる日・効果あり）
+    static let peach = Swatch(
+        accent: Color(light: 0xF4BBA4, dark: 0xC98E78),
+        soft: Color(light: 0xFCE9E1, dark: 0x3A2A24),
+        deep: Color(light: 0xC0785E, dark: 0xB8735A),
+        paper: Color(light: 0xFFF8F4, dark: 0x241D1A),
+        decor: Color(light: 0xF8D6C8, dark: 0x5A4036)
     )
 
-    /// 今日＝蛍光ペン
-    static let marker = Swatch(
-        accent: Color(light: 0xF2C63A, dark: 0xD9B232),
-        soft: Color(light: 0xFCEFB3, dark: 0x4A4220),
-        deep: Color(light: 0x8A6A00, dark: 0xF2C63A),
-        paper: Color(light: 0xFFFBEA, dark: 0x29261A),
-        decor: Color(light: 0xF7DE85, dark: 0x6B5B22)
+    /// 霧（今日の印・お知らせの地）。sky に寄せた無彩色に近い色
+    static let mist = Swatch(
+        accent: Color(light: 0xC9D6E2, dark: 0x4A5A6A),
+        soft: Color(light: 0xEEF3F7, dark: 0x20262C),
+        deep: Color(light: 0x5E6B78, dark: 0xA9B6C3),
+        paper: Color(light: 0xF7F9FB, dark: 0x1A1D21),
+        decor: Color(light: 0xDCE5ED, dark: 0x333B44)
     )
 
-    /// おみくじの筒（木）
-    static let wood = Swatch(
-        accent: Color(light: 0xCFA470, dark: 0x9C7A4F),
-        soft: Color(light: 0xF1E3CF, dark: 0x3A2F22),
-        deep: Color(light: 0x9B6E3C, dark: 0x6E5132),
-        paper: Color(light: 0xFAF3E8, dark: 0x2A251E),
-        decor: Color(light: 0xE6C9A0, dark: 0x7C6240)
+    /// 石（おみくじの筒・棚。淡い面と細い線）
+    static let stone = Swatch(
+        accent: Color(light: 0xE4E8EC, dark: 0x2C3137),
+        soft: Color(light: 0xF1F3F5, dark: 0x22262A),
+        deep: Color(light: 0x6B7785, dark: 0x5A6572),
+        paper: Color(light: 0xFAFBFC, dark: 0x1E2125),
+        decor: Color(light: 0xCDD5DD, dark: 0x3A424B)
     )
 
     static func swatch(for arm: Arm) -> Swatch {
-        arm == .doIt ? shu : ai
+        arm == .doIt ? peach : sky
     }
 
-    /// 結果の色：効果あり＝朱、逆効果＝藍、差なし＝墨、途中＝鉛筆
+    /// 結果の色：効果あり＝peach、逆効果＝sky、差なし＝文字、途中＝補助
     static func verdict(_ verdict: ExperimentResult.Verdict) -> Color {
         switch verdict {
-        case .better: shu.deep
-        case .worse: ai.deep
+        case .better: peach.deep
+        case .worse: sky.deep
         case .noClearDifference: ink
         case .notEnough: inkSoft
         }
@@ -111,15 +111,16 @@ enum Palette {
 /// 書体：見出しと数字はセリフ、本文はゴシック（2 書体）
 enum Typo {
     static func title(_ style: Font.TextStyle = .title2) -> Font {
-        .system(style, design: .serif).weight(.bold)
+        .system(style, design: .serif).weight(.medium)
     }
 
+    /// 大きな数字（字間を -3 に詰めて使う）
     static func number(_ style: Font.TextStyle = .largeTitle) -> Font {
-        .system(style, design: .serif).weight(.semibold).monospacedDigit()
+        .system(style, design: .serif).weight(.regular).monospacedDigit()
     }
 
     /// 小さなラベル（字間を開けて使う）
-    static let tag = Font.caption2.weight(.semibold)
+    static let tag = Font.caption2.weight(.medium)
 }
 
 /// 角丸の段階
@@ -140,16 +141,16 @@ enum Space {
     static let xxl: CGFloat = 32
 }
 
-/// 影は 3 種類だけ
+/// 影は弱く 3 種類だけ（opacity 0.06〜0.08）
 extension View {
     /// 紙（ふだん）
     func paperShadow() -> some View {
-        shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 4)
+        shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
     }
 
-    /// 浮いた物（札・ハンコ・結果カード）
+    /// 少し浮いた物（くじの紙片・結果カード）
     func liftedShadow() -> some View {
-        shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 6)
+        shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 6)
     }
 
     /// 線の影（ラベル・小さな札の厚み）
@@ -158,29 +159,26 @@ extension View {
     }
 }
 
-/// 主なボタン：判子調の四角。下辺だけ太い線で押せるキーに見せ、押すと沈む
+/// 主なボタン：deep の面に白い文字。押すと少しだけ縮んで薄くなる
 struct StampButtonStyle: ButtonStyle {
-    var swatch: Swatch = Palette.shu
+    var swatch: Swatch = Palette.sky
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         configuration.label
-            .font(.headline)
+            .font(.subheadline.weight(.semibold))
+            .kerning(0.4)
             .foregroundStyle(.white)
             .padding(.horizontal, Space.l)
             .frame(maxWidth: .infinity, minHeight: 52)
             .background(
                 RoundedRectangle(cornerRadius: Radius.button, style: .continuous)
-                    .fill(isEnabled ? swatch.deep : Palette.inkSoft.opacity(0.5))
+                    .fill(isEnabled ? swatch.deep : Palette.inkSoft.opacity(0.45))
             )
-            .background(
-                RoundedRectangle(cornerRadius: Radius.button, style: .continuous)
-                    .fill(Color.black.opacity(0.28))
-                    .offset(y: pressed ? 1 : 4)
-            )
-            .offset(y: pressed ? 3 : 0)
-            .animation(.spring(response: 0.18, dampingFraction: 0.6), value: pressed)
+            .opacity(pressed ? 0.85 : 1)
+            .scaleEffect(pressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.2), value: pressed)
     }
 }
 
@@ -190,7 +188,7 @@ struct PencilButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline.weight(.semibold))
+            .font(.subheadline.weight(.medium))
             .foregroundStyle(color)
             .padding(.horizontal, Space.m)
             .frame(minHeight: 44)
@@ -200,10 +198,10 @@ struct PencilButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                    .strokeBorder(color.opacity(0.55), lineWidth: 1.2)
+                    .strokeBorder(color.opacity(0.4), lineWidth: 0.8)
             )
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
     }
 }
 
@@ -226,36 +224,18 @@ extension View {
     }
 }
 
-/// 横揺れ（失敗・間違い）。0,-8,7,-5,4,-2,0 のように減衰する
-struct ShakeEffect: GeometryEffect {
-    var phase: CGFloat
-    var travel: CGFloat = 8
-
-    var animatableData: CGFloat {
-        get { phase }
-        set { phase = newValue }
-    }
-
-    func effectValue(size: CGSize) -> ProjectionTransform {
-        let progress = phase - phase.rounded(.down)
-        let decay = 1 - progress
-        let x = travel * decay * sin(progress * .pi * 6)
-        return ProjectionTransform(CGAffineTransform(translationX: x, y: 0))
-    }
-}
-
-/// 0.6 → 1 のバネで出てくる（結果・ハンコ）。動きを減らす設定ではそのまま出す
+/// そっと置く（結果・ハンコ）：少し大きい所から 0.35 秒で下りて、薄い所から現れる。動きを減らす設定ではそのまま出す
 struct PopIn: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(shown || reduceMotion ? 1 : 0.6)
+            .scaleEffect(shown || reduceMotion ? 1 : 1.04)
             .opacity(shown || reduceMotion ? 1 : 0)
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { shown = true }
+                withAnimation(.easeOut(duration: 0.35)) { shown = true }
             }
     }
 }

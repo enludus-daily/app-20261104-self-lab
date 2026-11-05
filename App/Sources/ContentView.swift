@@ -98,11 +98,11 @@ struct ContentView: View {
                 DetailPlaceholder()
             }
         }
-        .tint(Palette.shu.deep)
+        .tint(Palette.peach.deep)
         .sheet(item: $checkIn) { request in
             if let experiment = store.experiment(id: request.experimentID) {
                 CheckInSheet(experiment: experiment, day: request.day) { rating, followed, note in
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.55)) {
+                    withAnimation(.easeOut(duration: 0.3)) {
                         if store.record(id: experiment.id, day: request.day, rating: rating, followed: followed, note: note) {
                             recordCount += 1
                         }
@@ -121,7 +121,7 @@ struct ContentView: View {
         .fullScreenCover(isPresented: onboardingBinding) {
             OnboardingView { onboarded = true }
         }
-        .haptic(.impact(weight: .heavy), trigger: revealCount)
+        .haptic(.selection, trigger: revealCount)
         .haptic(.success, trigger: recordCount)
         .onAppear(perform: openScreenshotScene)
     }
@@ -213,7 +213,7 @@ struct SectionTitle: View {
     var body: some View {
         HStack(spacing: Space.s) {
             Image(systemName: symbol)
-                .foregroundStyle(Palette.shu.deep)
+                .foregroundStyle(Palette.sky.deep)
             Text(text)
                 .font(Typo.title(.headline))
                 .kerning(0.6)
@@ -240,13 +240,9 @@ struct DateStamp: View {
 
     var body: some View {
         Text(date.formatted(.dateTime.month().day().weekday(.abbreviated)))
-            .font(.system(.subheadline, design: .serif).weight(.bold).monospacedDigit())
-            .foregroundStyle(Palette.shu.deep)
-            .padding(.horizontal, Space.s)
-            .padding(.vertical, Space.xs)
-            .overlay(RoundedRectangle(cornerRadius: Radius.tag).strokeBorder(Palette.shu.deep, lineWidth: 1.5))
-            .mask(InkGrain(seed: 3, count: 40))
-            .rotationEffect(.degrees(-3))
+            .font(.system(.subheadline, design: .serif).weight(.regular).monospacedDigit())
+            .kerning(0.6)
+            .foregroundStyle(Palette.inkSoft)
     }
 }
 
@@ -264,9 +260,9 @@ struct GreetingHeader: View {
                 .foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: Space.xl) {
-                stat(streak, unit: "日", label: "続けて記録", color: Palette.marker.deep)
-                stat(recordedDays, unit: "日", label: "記録した日", color: Palette.ai.deep)
-                stat(proven, unit: "個", label: "効くこと", color: Palette.shu.deep)
+                stat(streak, unit: "日", label: "続けて記録", color: Palette.ink)
+                stat(recordedDays, unit: "日", label: "記録した日", color: Palette.ink)
+                stat(proven, unit: "個", label: "効くこと", color: Palette.peach.deep)
             }
         }
         .padding(.vertical, Space.s)
@@ -277,7 +273,7 @@ struct GreetingHeader: View {
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text("\(value)")
                     .font(Typo.number(.largeTitle))
-                    .kerning(-1.5)
+                    .kerning(-3)
                     .foregroundStyle(color)
                     .contentTransition(.numericText())
                 Text(unit).font(.caption).foregroundStyle(Palette.inkSoft)
@@ -307,10 +303,10 @@ struct TodayPage: View {
             ? pending.first(where: { day in today.map { day == $0 - 1 } ?? (day == experiment.duration - 1) })
             : nil
         let missing = pending.first { $0 != today && $0 != morningDay }
-        NotebookPage(tilt: -0.5) {
+        NotebookPage(tilt: -0.5, showsClip: true, grid: true) {
             VStack(alignment: .leading, spacing: Space.l) {
                 HStack(alignment: .top, spacing: Space.m) {
-                    LabelSticker(text: experiment.title, color: Palette.shu.accent)
+                    LabelSticker(text: experiment.title, color: Palette.sky.accent)
                     Spacer(minLength: 0)
                     Button(action: onOpen) {
                         Image(systemName: "book.pages")
@@ -340,7 +336,7 @@ struct TodayPage: View {
                         }
                         if revealed {
                             ResultSlip(experiment: experiment, arm: arm, day: today) { onRecord(today) }
-                                .transition(.asymmetric(insertion: .scale(scale: 0.6, anchor: .bottomLeading).combined(with: .opacity), removal: .opacity))
+                                .transition(.opacity)
                         } else {
                             VStack(alignment: .leading, spacing: Space.s) {
                                 if !drawnOnce {
@@ -363,7 +359,7 @@ struct TodayPage: View {
                         } label: {
                             Label("筒を振って、くじを引く", systemImage: "hand.tap")
                         }
-                        .buttonStyle(StampButtonStyle(swatch: Palette.wood))
+                        .buttonStyle(StampButtonStyle(swatch: Palette.stone))
                     }
                 }
 
@@ -381,10 +377,10 @@ struct TodayPage: View {
                         } label: {
                             Label("\(missing + 1) 日目を記録する", systemImage: "pencil")
                         }
-                        .buttonStyle(PencilButtonStyle(color: Palette.shu.deep))
+                        .buttonStyle(PencilButtonStyle(color: Palette.peach.deep))
                     }
                     .padding(Space.m)
-                    .background(Palette.marker.soft.opacity(0.7))
+                    .background(Palette.mist.soft)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
                 }
             }
@@ -406,8 +402,10 @@ struct ResultSlip: View {
             TagText(text: "今日のくじ")
             HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                 Text("今日は").font(Typo.title(.subheadline)).foregroundStyle(Palette.ink)
+                Image(systemName: arm == .doIt ? "sun.min" : "moon")
+                    .foregroundStyle(swatch.deep)
                 Text(arm.title)
-                    .font(Typo.title(.title))
+                    .font(Typo.title(.title2))
                     .kerning(-0.5)
                     .foregroundStyle(swatch.deep)
                     .lineLimit(1)
@@ -444,12 +442,9 @@ struct ResultSlip: View {
         .padding(Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(swatch.paper)
-        .overlay(alignment: .leading) {
-            Rectangle().fill(swatch.accent).frame(width: 4)
-        }
         .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(swatch.accent, lineWidth: 0.8))
         .liftedShadow()
-        .rotationEffect(.degrees(1.2))
     }
 }
 
@@ -463,7 +458,7 @@ struct MorningRecordRow: View {
         let arm = experiment.arm(day: day) ?? .doIt
         VStack(alignment: .leading, spacing: Space.s) {
             HStack(spacing: Space.s) {
-                Image(systemName: "sunrise.fill").foregroundStyle(Palette.marker.deep)
+                Image(systemName: "sunrise").foregroundStyle(Palette.peach.deep)
                 Text("けさの記録").font(Typo.title(.subheadline))
                 TagText(text: "きのうは\(arm.title)", color: Palette.swatch(for: arm).deep)
             }
@@ -474,9 +469,9 @@ struct MorningRecordRow: View {
             .buttonStyle(StampButtonStyle(swatch: Palette.swatch(for: arm)))
         }
         .padding(Space.m)
-        .background(Palette.marker.paper)
+        .background(Palette.peach.paper)
         .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.marker.decor, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.peach.accent, lineWidth: 0.8))
     }
 }
 
@@ -485,9 +480,9 @@ struct EmptyNotebook: View {
     let onNew: () -> Void
 
     var body: some View {
-        NotebookPage(tilt: 0.4) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
-                LabelSticker(text: "新しい実験", color: Palette.marker.accent)
+                PageTitle(text: "新しい実験")
                 Text("いまは進行中の実験がありません。気になることを 1 つ書くか、42 の型から選ぶと、今日からくじで確かめられます。")
                     .font(.subheadline)
                     .foregroundStyle(Palette.ink)
@@ -531,13 +526,9 @@ struct Shelf: View {
                 }
             }
             // 棚板
-            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(Palette.wood.accent)
-                .frame(height: 12)
-                .overlay(alignment: .bottom) {
-                    Rectangle().fill(Palette.wood.deep).frame(height: 3)
-                }
-                .paperShadow()
+            Rectangle()
+                .fill(Palette.stone.decor)
+                .frame(height: 1)
                 .accessibilityHidden(true)
         }
     }
@@ -548,9 +539,9 @@ struct DetailPlaceholder: View {
     var body: some View {
         ZStack {
             Palette.desk.ignoresSafeArea()
-            NotebookPage(showsClip: false) {
+            NotebookPage {
                 VStack(alignment: .leading, spacing: Space.m) {
-                    LabelSticker(text: "ノートを選んでください", color: Palette.ai.accent)
+                    PageTitle(text: "ノートを選んでください")
                     Text("左の今日のページか、棚の背表紙を押すと、記録表と、やる日・やすむ日をくらべた結果がここに開きます。")
                         .font(.subheadline)
                         .foregroundStyle(Palette.ink)
@@ -584,10 +575,10 @@ struct CoachBubble: View {
                 .background(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).fill(Palette.ink))
         }
         .liftedShadow()
-        .offset(x: pulse ? -4 : 0)
+        .opacity(pulse ? 0.75 : 1)
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulse = true }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) { pulse = true }
         }
         .accessibilityLabel("案内：\(text)")
     }

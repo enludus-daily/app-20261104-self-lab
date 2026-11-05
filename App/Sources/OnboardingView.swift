@@ -34,9 +34,9 @@ struct OnboardingView: View {
                 HStack(spacing: Space.s) {
                     ForEach(0..<3, id: \.self) { index in
                         Capsule()
-                            .fill(index == page ? Palette.shu.deep : Palette.line)
+                            .fill(index == page ? Palette.sky.deep : Palette.line)
                             .frame(width: index == page ? 22 : 8, height: 8)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.7), value: page)
+                            .animation(.easeOut(duration: 0.25), value: page)
                     }
                 }
                 .accessibilityHidden(true)
@@ -73,8 +73,7 @@ struct OnboardingView: View {
                     .padding(Space.l)
                     .background(Palette.paper)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.page, style: .continuous))
-                    .paperShadow()
-                    .rotationEffect(.degrees(-2))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.page, style: .continuous).strokeBorder(Palette.line, lineWidth: 0.6))
             }
         }
         .frame(height: 250)
@@ -84,7 +83,7 @@ struct OnboardingView: View {
         VStack(spacing: Space.xl) {
             Spacer(minLength: 0)
             art
-            NotebookPage(showsClip: false) {
+            NotebookPage {
                 VStack(alignment: .leading, spacing: Space.m) {
                     Text(title)
                         .font(Typo.title(.title2))

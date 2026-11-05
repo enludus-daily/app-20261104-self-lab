@@ -84,15 +84,14 @@ struct ExperimentDetailView: View {
     // MARK: - ページ
 
     private func header(_ experiment: Experiment, finished: Bool, today: Int?, result: ExperimentResult) -> some View {
-        NotebookPage(tilt: -0.4) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
-                LabelSticker(text: experiment.title, color: Palette.shu.accent, font: Typo.title(.title2))
-                    .padding(.trailing, Space.xl)
+                PageTitle(text: experiment.title, font: Typo.title(.title2))
                 TagText(text: "\(experiment.startDate.formatted(.dateTime.month().day())) から \(experiment.duration) 日", color: Palette.ink)
                 Label(experiment.action, systemImage: "bolt")
-                    .foregroundStyle(Palette.shu.deep)
+                    .foregroundStyle(Palette.peach.deep)
                 Label(experiment.question + (experiment.nextMorning ? "（翌朝に記録）" : "（夜に記録）"), systemImage: experiment.nextMorning ? "sunrise" : "moon.stars")
-                    .foregroundStyle(Palette.ai.deep)
+                    .foregroundStyle(Palette.sky.deep)
                 if !experiment.reason.isEmpty {
                     Text(experiment.reason)
                         .font(.footnote)
@@ -103,7 +102,7 @@ struct ExperimentDetailView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Palette.ink)
                     .padding(Space.s)
-                    .background(Palette.marker.soft.opacity(0.8))
+                    .background(Palette.mist.soft)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.tag, style: .continuous))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -112,7 +111,7 @@ struct ExperimentDetailView: View {
     }
 
     private func tablePage(_ experiment: Experiment, today: Int?) -> some View {
-        NotebookPage(showsClip: false) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
                 Text("記録表").font(Typo.title(.headline)).foregroundStyle(Palette.ink)
                 RecordTable(experiment: experiment, today: today)
@@ -126,7 +125,7 @@ struct ExperimentDetailView: View {
     }
 
     private func verdictPage(_ experiment: Experiment, result: ExperimentResult, finished: Bool) -> some View {
-        NotebookPage(tilt: 0.3, showsClip: false) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
                 HStack(alignment: .center, spacing: Space.l) {
                     Hanko(verdict: result.verdict, size: 104, inProgress: !finished)
@@ -141,8 +140,9 @@ struct ExperimentDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                         if let difference = result.difference {
                             Text("差 \(ResultText.signed(difference))")
-                                .font(Typo.number(.title3))
-                                .kerning(-0.5)
+                                .font(Typo.number(.title2))
+                                .kerning(-1)
+                                .contentTransition(.numericText())
                                 .foregroundStyle(Palette.ink)
                         }
                     }
@@ -164,13 +164,13 @@ struct ExperimentDetailView: View {
     }
 
     private func tipsPage(_ template: ExperimentTemplate) -> some View {
-        NotebookPage(tilt: -0.3, showsClip: false) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
                 Text("この実験のコツ").font(Typo.title(.headline)).foregroundStyle(Palette.ink)
                 Label(template.tip, systemImage: "lightbulb")
                     .foregroundStyle(Palette.ink)
                 Label(template.pitfall, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(Palette.shu.deep)
+                    .foregroundStyle(Palette.peach.deep)
             }
             .font(.subheadline)
             .fixedSize(horizontal: false, vertical: true)
@@ -194,7 +194,7 @@ struct ExperimentDetailView: View {
                 } label: {
                     Label("結果カードを作る", systemImage: "square.and.arrow.up")
                 }
-                .buttonStyle(StampButtonStyle(swatch: Palette.ai))
+                .buttonStyle(StampButtonStyle(swatch: Palette.sky))
             }
             if finished {
                 Button {
@@ -211,11 +211,11 @@ struct ExperimentDetailView: View {
             HStack {
                 if !finished {
                     Button("途中で終える") { confirmingEnd = true }
-                        .buttonStyle(PencilButtonStyle(color: Palette.ai.deep))
+                        .buttonStyle(PencilButtonStyle(color: Palette.sky.deep))
                 }
                 Spacer()
                 Button("ノートを消す", role: .destructive) { confirmingDelete = true }
-                    .buttonStyle(PencilButtonStyle(color: Palette.shu.deep))
+                    .buttonStyle(PencilButtonStyle(color: Palette.peach.deep))
             }
             Text("医療の判断には使わないでください。体調に関わることは医師に相談してください。")
                 .font(.caption2)
@@ -265,11 +265,11 @@ struct MeansChart: View {
                 let swatch = Palette.swatch(for: arm)
                 if let mean = Analyzer.mean(ratings) {
                     BarMark(x: .value("日", arm.title), y: .value("平均", mean), width: .ratio(0.5))
-                        .foregroundStyle(swatch.accent.opacity(0.85))
+                        .foregroundStyle(swatch.accent)
                         .cornerRadius(Radius.tag)
                         .annotation(position: .top) {
                             Text(ResultText.number(mean))
-                                .font(.system(.callout, design: .serif).weight(.bold).monospacedDigit())
+                                .font(.system(.callout, design: .serif).weight(.regular).monospacedDigit())
                                 .foregroundStyle(swatch.deep)
                         }
                 }
@@ -301,7 +301,7 @@ struct ChancePage: View {
         let buckets = Analyzer.differenceDistribution(result.doRatings, result.restRatings)
         let observed = abs(result.difference ?? 0)
         let total = buckets.reduce(0) { $0 + $1.count }
-        NotebookPage(tilt: 0.2, showsClip: false) {
+        NotebookPage {
             VStack(alignment: .leading, spacing: Space.m) {
                 Text("偶然でも、この差は出る？").font(Typo.title(.headline)).foregroundStyle(Palette.ink)
                 Text("記録した点数はそのままに、くじの割り付けだけを全部の組み合わせ（\(total.formatted()) 通り）で入れ替えて、「やる日の平均 − やすむ日の平均」を並べました。")
@@ -311,15 +311,15 @@ struct ChancePage: View {
                 Chart {
                     ForEach(buckets) { bucket in
                         BarMark(x: .value("差", bucket.difference), y: .value("通り", bucket.count), width: .fixed(5))
-                            .foregroundStyle(abs(bucket.difference) >= observed - 1e-9 ? Palette.shu.accent : Palette.inkSoft.opacity(0.35))
+                            .foregroundStyle(abs(bucket.difference) >= observed - 1e-9 ? Palette.peach.accent : Palette.inkSoft.opacity(0.35))
                     }
                     RuleMark(x: .value("あなたの差", result.difference ?? 0))
-                        .foregroundStyle(Palette.shu.deep)
-                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                        .foregroundStyle(Palette.peach.deep)
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                         .annotation(position: .top, alignment: .leading) {
                             Text("あなたの差")
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(Palette.shu.deep)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(Palette.peach.deep)
                         }
                 }
                 .chartYAxis(.hidden)
@@ -362,11 +362,11 @@ struct ShareSheet: View {
                         ShareLink(item: image, preview: SharePreview("じぶん実験室の結果", image: image)) {
                             Label("画像を共有する", systemImage: "square.and.arrow.up")
                         }
-                        .buttonStyle(StampButtonStyle(swatch: Palette.ai))
+                        .buttonStyle(StampButtonStyle(swatch: Palette.sky))
                     } else {
                         Text("カードを作れませんでした。もう一度開き直してください。")
                             .font(.footnote)
-                            .foregroundStyle(Palette.shu.deep)
+                            .foregroundStyle(Palette.peach.deep)
                     }
                 }
                 .padding(Space.xl)
@@ -410,10 +410,10 @@ struct ShareCard: View {
                 GridPaper(spacing: 18 * scale, marginX: 36 * scale)
                 VStack(alignment: .leading, spacing: 18 * scale) {
                     Text("じぶん実験室")
-                        .font(.system(size: 14 * scale, weight: .bold, design: .serif))
+                        .font(.system(size: 14 * scale, weight: .medium, design: .serif))
                         .kerning(1)
                         .foregroundStyle(Palette.inkSoft)
-                    LabelSticker(text: experiment.title, color: Palette.shu.accent, font: .system(size: 22 * scale, weight: .bold, design: .serif))
+                    LabelSticker(text: experiment.title, color: Palette.peach.accent, font: .system(size: 22 * scale, weight: .medium, design: .serif))
                     Text("\(experiment.duration) 日の実験 ・ 記録 \(experiment.checkIns.count) 日")
                         .font(.system(size: 13 * scale))
                         .foregroundStyle(Palette.ink)
@@ -425,8 +425,8 @@ struct ShareCard: View {
                     }
                     Spacer(minLength: 0)
                     HStack(alignment: .firstTextBaseline, spacing: 24 * scale) {
-                        number(result.doMean, label: "やる日", color: Palette.shu.deep, scale: scale)
-                        number(result.restMean, label: "やすむ日", color: Palette.ai.deep, scale: scale)
+                        number(result.doMean, label: "やる日", color: Palette.peach.deep, scale: scale)
+                        number(result.restMean, label: "やすむ日", color: Palette.sky.deep, scale: scale)
                     }
                     if let difference = result.difference, let p = result.pValue {
                         Text("差 \(ResultText.signed(difference)) ・ 偶然の確率 \(ResultText.percent(p))")
@@ -447,11 +447,11 @@ struct ShareCard: View {
     private func number(_ value: Double?, label: String, color: Color, scale: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value.map(ResultText.number) ?? "–")
-                .font(.system(size: 46 * scale, weight: .semibold, design: .serif).monospacedDigit())
-                .kerning(-2)
+                .font(.system(size: 52 * scale, weight: .regular, design: .serif).monospacedDigit())
+                .kerning(-3)
                 .foregroundStyle(color)
             Text(label)
-                .font(.system(size: 12 * scale, weight: .semibold))
+                .font(.system(size: 12 * scale, weight: .medium))
                 .kerning(0.6)
                 .foregroundStyle(Palette.inkSoft)
         }
