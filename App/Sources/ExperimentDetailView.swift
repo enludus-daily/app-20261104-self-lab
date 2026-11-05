@@ -133,7 +133,7 @@ struct ExperimentDetailView: View {
                     VStack(alignment: .leading, spacing: Space.xs) {
                         TagText(text: finished ? "結果" : "途中の結果")
                         Text(ResultText.headline(result))
-                            .font(Typo.title(.title))
+                            .font(Typo.title(.title2))
                             .foregroundStyle(Palette.verdict(result.verdict))
                             .minimumScaleFactor(0.8)
                             .lineLimit(2)
@@ -328,7 +328,7 @@ struct ChancePage: View {
                 .frame(height: 170)
                 .accessibilityLabel("くじを入れ替えたときの差の分布。あなたの差より外側は \(ResultText.percent(result.pValue ?? 1))")
                 if let p = result.pValue {
-                    Text("朱色の棒（あなたの差と同じか、もっと大きい差）は全体の \(ResultText.percent(p))。\(ResultText.analogy(p))")
+                    Text("色の付いた棒（あなたの差と同じか、もっと大きい差）は全体の \(ResultText.percent(p))。\(ResultText.analogy(p))")
                         .font(.subheadline)
                         .foregroundStyle(Palette.ink)
                         .fixedSize(horizontal: false, vertical: true)

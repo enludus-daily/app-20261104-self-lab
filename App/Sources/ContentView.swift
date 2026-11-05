@@ -359,7 +359,7 @@ struct TodayPage: View {
                         } label: {
                             Label("筒を振って、くじを引く", systemImage: "hand.tap")
                         }
-                        .buttonStyle(StampButtonStyle(swatch: Palette.stone))
+                        .buttonStyle(StampButtonStyle())
                     }
                 }
 
