@@ -319,7 +319,7 @@ struct CardDetailView: View {
     }
 
     private func replicate() {
-        guard ProGate.canStartAnother(activeCount: store.active().count, isPro: purchases.isPro) else {
+        guard ProGate.canStartAnother(activeCount: store.activeOwnCount(), isPro: purchases.isPro) else {
             if purchases.isPro {
                 withAnimation(.easeOut(duration: 0.25)) { limitNotice = true }
             } else {

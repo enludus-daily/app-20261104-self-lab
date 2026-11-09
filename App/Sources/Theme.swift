@@ -198,7 +198,9 @@ struct Panel<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        content
+        VStack(alignment: .leading, spacing: Space.s) {
+            content
+        }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
             .background(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).fill(Palette.card))

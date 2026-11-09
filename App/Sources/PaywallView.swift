@@ -30,7 +30,7 @@ struct PaywallView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: Space.xl) {
+                VStack(spacing: Space.l) {
                     header
                     VStack(spacing: Space.m) {
                         ForEach(ProFeature.allCases) { feature in
@@ -64,16 +64,16 @@ struct PaywallView: View {
     private var header: some View {
         VStack(spacing: Space.m) {
             ZStack {
-                CardBack(width: 78)
+                CardBack(width: 52)
                     .rotationEffect(.degrees(-10))
-                    .offset(x: -44, y: 6)
-                CardBack(width: 78)
+                    .offset(x: -30, y: 4)
+                CardBack(width: 52)
                     .rotationEffect(.degrees(10))
-                    .offset(x: 44, y: 6)
-                CardBack(width: 86, label: "Pro")
+                    .offset(x: 30, y: 4)
+                CardBack(width: 58)
                     .liftedShadow()
             }
-            .frame(height: CardMetrics.height(for: 86) + 12)
+            .frame(height: CardMetrics.height(for: 58) + 8)
             .accessibilityHidden(true)
             TagText(text: "じぶん実験室 Pro", color: Palette.sky.deep)
             Text(reason.headline)
@@ -101,7 +101,8 @@ struct PaywallView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(Space.m)
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
         .background(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).fill(Palette.card))
         .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous).strokeBorder(Palette.line, lineWidth: 0.6))
     }

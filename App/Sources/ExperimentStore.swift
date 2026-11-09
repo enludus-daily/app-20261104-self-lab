@@ -39,6 +39,11 @@ final class ExperimentStore {
             .sorted { $0.date(ofDay: $0.duration, calendar: calendar) > $1.date(ofDay: $1.duration, calendar: calendar) }
     }
 
+    /// 無料の上限で数える進行中の実験（見本は数えない）
+    func activeOwnCount(now: Date = .now) -> Int {
+        active(now: now).filter { !$0.isSample }.count
+    }
+
     /// 新しい実験を、今日を 1 日目として始める
     @discardableResult
     func start(_ draft: ExperimentDraft, duration: Int = Experiment.defaultDuration, prediction: Prediction? = nil, now: Date = .now, seed: UInt64 = UInt64.random(in: 1...UInt64.max)) -> UUID? {

@@ -32,13 +32,14 @@ struct CardFrame: View {
 struct FoilSheen: View {
     let scale: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var phase: CGFloat = -1
 
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
             LinearGradient(
-                colors: [.white.opacity(0), .white.opacity(0.45), .white.opacity(0)],
+                colors: [.white.opacity(0), .white.opacity(colorScheme == .dark ? 0.12 : 0.45), .white.opacity(0)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -73,42 +74,44 @@ struct CardFace: View {
         let compact = width < 170
         ZStack {
             CardFrame(swatch: swatch, scale: scale)
-            VStack(spacing: (compact ? 6 : 10) * scale) {
-                HStack(alignment: .center) {
-                    Text(card.category?.title ?? "じぶんの型")
-                        .font(.system(size: 11 * scale, weight: .medium))
-                        .kerning(0.6)
-                        .foregroundStyle(Palette.inkSoft)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    StarRow(stars: card.stars, color: swatch.deep, size: 11 * scale)
-                }
-                Spacer(minLength: 0)
-                ZStack {
-                    Circle().fill(swatch.soft)
-                    Circle().strokeBorder(swatch.accent, lineWidth: 0.8)
-                    Image(systemName: card.symbol)
-                        .font(.system(size: 42 * scale, weight: .light))
+            if compact {
+                compactBody(swatch: swatch, scale: scale)
+            } else {
+                VStack(spacing: 10 * scale) {
+                    HStack(alignment: .center) {
+                        Text(card.category?.title ?? "じぶんの型")
+                            .font(.system(size: 11 * scale, weight: .medium))
+                            .kerning(0.6)
+                            .foregroundStyle(Palette.inkSoft)
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        StarRow(stars: card.stars, color: swatch.deep, size: 11 * scale)
+                    }
+                    Spacer(minLength: 0)
+                    ZStack {
+                        Circle().fill(swatch.soft)
+                        Circle().strokeBorder(swatch.accent, lineWidth: 0.8)
+                        Image(systemName: card.symbol)
+                            .font(.system(size: 42 * scale, weight: .light))
+                            .foregroundStyle(swatch.deep)
+                    }
+                    .frame(width: 112 * scale, height: 112 * scale)
+                    Text(card.title)
+                        .font(.system(size: 19 * scale, weight: .medium, design: .serif))
+                        .foregroundStyle(Palette.ink)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Label(card.kind.title, systemImage: card.kind.symbol)
+                        .font(.system(size: 12 * scale, weight: .semibold))
                         .foregroundStyle(swatch.deep)
-                }
-                .frame(width: 112 * scale, height: 112 * scale)
-                Text(card.title)
-                    .font(.system(size: 19 * scale, weight: .medium, design: .serif))
-                    .foregroundStyle(Palette.ink)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.7)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                Label(card.kind.title, systemImage: card.kind.symbol)
-                    .font(.system(size: 12 * scale, weight: .semibold))
-                    .foregroundStyle(swatch.deep)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 10 * scale)
-                    .padding(.vertical, 4 * scale)
-                    .background(Capsule().fill(swatch.soft))
-                if !compact {
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 10 * scale)
+                        .padding(.vertical, 4 * scale)
+                        .background(Capsule().fill(swatch.soft))
                     HStack(spacing: 14 * scale) {
                         figure("差", ResultText.signed(card.difference), scale: scale)
                         figure("偶然", ResultText.percent(card.pValue), scale: scale)
@@ -121,9 +124,9 @@ struct CardFace: View {
                             .foregroundStyle(Palette.inkSoft)
                     }
                 }
+                .padding(.horizontal, 20 * scale)
+                .padding(.vertical, 22 * scale)
             }
-            .padding(.horizontal, 20 * scale)
-            .padding(.vertical, 22 * scale)
             if card.stars >= 2 {
                 FoilSheen(scale: scale)
             }
@@ -131,6 +134,42 @@ struct CardFace: View {
         .frame(width: width, height: CardMetrics.height(for: width))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(card.title)。\(card.kind.title)。★\(card.stars)")
+    }
+
+    /// 小さなカード（図鑑の一覧・ホームの新着）：印・題・★・種類の印だけを、読める大きさで
+    private func compactBody(swatch: Swatch, scale: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            HStack {
+                StarRow(stars: card.stars, color: swatch.deep, size: 8)
+                Spacer(minLength: 0)
+                Image(systemName: card.kind.symbol)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(swatch.deep)
+            }
+            Spacer(minLength: 0)
+            ZStack {
+                Circle().fill(swatch.soft)
+                Circle().strokeBorder(swatch.accent, lineWidth: 0.6)
+                Image(systemName: card.symbol)
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(swatch.deep)
+            }
+            .frame(width: 44, height: 44)
+            Text(card.title)
+                .font(.system(size: 10, weight: .medium, design: .serif))
+                .foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+            Text(card.kind.title)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundStyle(swatch.deep)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
     }
 
     private func figure(_ label: String, _ value: String, scale: CGFloat) -> some View {
@@ -224,24 +263,25 @@ struct EmptySlot: View {
                 .fill(Palette.card.opacity(0.6))
             RoundedRectangle(cornerRadius: Radius.card * scale, style: .continuous)
                 .strokeBorder(Palette.inkSoft.opacity(0.45), style: StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
-            VStack(spacing: 8 * scale) {
+            VStack(spacing: 6) {
                 Image(systemName: template.symbol)
-                    .font(.system(size: 52 * scale, weight: .light))
-                    .foregroundStyle(Palette.inkSoft.opacity(0.45))
+                    .font(.system(size: max(16, 52 * scale), weight: .light))
+                    .foregroundStyle(Palette.inkSoft.opacity(0.5))
                 Text(template.title)
-                    .font(.system(size: 22 * scale, weight: .regular, design: .serif))
+                    .font(.system(size: max(10, 22 * scale), weight: .regular, design: .serif))
                     .foregroundStyle(Palette.inkSoft)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.85)
             }
-            .padding(18 * scale)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 12)
             if locked {
                 VStack {
                     HStack {
                         Spacer()
                         Text("Pro")
-                            .font(.system(size: 22 * scale, weight: .semibold))
+                            .font(.system(size: max(9, 22 * scale), weight: .semibold))
                             .kerning(0.6)
                             .foregroundStyle(Palette.sky.deep)
                             .padding(.horizontal, 10 * scale)
@@ -250,7 +290,7 @@ struct EmptySlot: View {
                     }
                     Spacer()
                 }
-                .padding(16 * scale)
+                .padding(6)
             }
         }
         .frame(width: width, height: CardMetrics.height(for: width))

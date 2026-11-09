@@ -41,7 +41,7 @@ struct NewExperimentView: View {
 
     var body: some View {
         let isPro = purchases.isPro
-        let canStart = ProGate.canStartAnother(activeCount: store.active().count, isPro: isPro)
+        let canStart = ProGate.canStartAnother(activeCount: store.activeOwnCount(), isPro: isPro)
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.xl) {
@@ -218,7 +218,7 @@ struct NewExperimentView: View {
     }
 
     private func attemptStart(_ draft: ExperimentDraft, days: Int, prediction: Prediction?) {
-        guard ProGate.canStartAnother(activeCount: store.active().count, isPro: purchases.isPro) else {
+        guard ProGate.canStartAnother(activeCount: store.activeOwnCount(), isPro: purchases.isPro) else {
             paywall = purchases.isPro ? nil : .moreExperiments
             return
         }

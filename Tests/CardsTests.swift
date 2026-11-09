@@ -113,6 +113,15 @@ struct CardBookTests {
         #expect(CardBook.custom(cards).isEmpty)
     }
 
+    @Test func samplesDoNotUseTheFreeSlot() throws {
+        let store = makeStore(seedSamples: true)
+        #expect(store.active(now: day(4)).count == 1)
+        #expect(store.activeOwnCount(now: day(4)) == 0)
+        #expect(ProGate.canStartAnother(activeCount: store.activeOwnCount(now: day(4)), isPro: false))
+        _ = try #require(store.start(draft(), now: day(4), seed: 2))
+        #expect(!ProGate.canStartAnother(activeCount: store.activeOwnCount(now: day(4)), isPro: false))
+    }
+
     @Test func customExperimentsAreTheirOwnSlot() {
         let e = experiment(doRating: { _ in 5 }, restRating: { _ in 2 })
         let cards = [e].compactMap(CardRules.card(for:))
