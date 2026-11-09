@@ -37,7 +37,6 @@ struct PaywallView: View {
                             row(feature)
                         }
                     }
-                    priceBlock
                     Text("Pro は買い切りです。一度買えば、この Apple アカウントのほかの iPhone と家族共有でも使えます。核の機能（くじ・記録・結果・図鑑の \(TemplateLibrary.freeCount) 枠）はずっと無料です。")
                         .font(.caption)
                         .foregroundStyle(Palette.inkSoft)
@@ -49,6 +48,19 @@ struct PaywallView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Palette.ground.ignoresSafeArea())
+            // 主な操作（値段と「Pro にする」）は下に固定し、スクロールなしで見えるように
+            .safeAreaInset(edge: .bottom) {
+                priceBlock
+                    .padding(.horizontal, Space.xl)
+                    .padding(.top, Space.m)
+                    .padding(.bottom, Space.s)
+                    .frame(maxWidth: 520)
+                    .frame(maxWidth: .infinity)
+                    .background(Palette.ground.opacity(0.96).ignoresSafeArea(edges: .bottom))
+                    .overlay(alignment: .top) {
+                        Rectangle().fill(Palette.line).frame(height: 0.6)
+                    }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("閉じる") { dismiss() }
@@ -109,7 +121,7 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var priceBlock: some View {
-        VStack(spacing: Space.m) {
+        VStack(spacing: Space.s) {
             if purchases.isPro {
                 Label("Pro になっています。ありがとうございます。", systemImage: "checkmark.seal")
                     .font(.subheadline.weight(.medium))
@@ -117,10 +129,10 @@ struct PaywallView: View {
             } else if let product = purchases.proProduct {
                 HStack(alignment: .firstTextBaseline, spacing: Space.xs) {
                     Text(product.displayPrice)
-                        .font(Typo.number(.largeTitle))
-                        .kerning(-2)
+                        .font(Typo.number(.title))
+                        .kerning(-1)
                         .foregroundStyle(Palette.ink)
-                    Text("買い切り")
+                    Text("買い切り · 家族共有")
                         .font(.footnote)
                         .foregroundStyle(Palette.inkSoft)
                 }

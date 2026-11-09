@@ -28,7 +28,7 @@ struct CardFrame: View {
     }
 }
 
-/// 箔のきらめき（★2 以上）。斜めの淡い光の帯が、ゆっくり横切る。動きを減らす設定では止まる
+/// 箔のきらめき（★2 以上）。表になったとき、斜めの淡い光の帯が 1 回だけ横切る。動きを減らす設定では止まる
 struct FoilSheen: View {
     let scale: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -55,7 +55,8 @@ struct FoilSheen: View {
                 phase = 0.2
                 return
             }
-            withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: false).delay(0.6)) {
+            // 1 回だけ横切る（くり返す動きは置かない。静かな動き）
+            withAnimation(.easeInOut(duration: 1.6).delay(0.4)) {
                 phase = 1.4
             }
         }
@@ -323,9 +324,6 @@ struct DeckStack: View {
     let count: Int
     var width: CGFloat = 170
     var caption: String?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var breathe = false
-
     var body: some View {
         let layers = min(max(count, 1), 3)
         ZStack {
@@ -336,11 +334,6 @@ struct DeckStack: View {
                     .offset(x: CGFloat(depth) * 10, y: CGFloat(depth) * -4)
                     .modifier(TopShadow(isTop: index == layers - 1))
             }
-        }
-        .scaleEffect(breathe ? 1.02 : 1)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { breathe = true }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("けさの開封。\(count) 枚")

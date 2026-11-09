@@ -99,7 +99,7 @@ struct OnboardingView: View {
     }
 }
 
-/// オンボーディングの動く見本：伏せたカードが、くり返しめくれる
+/// オンボーディングの動く見本：伏せたカードが 1 回めくれる
 struct FlipDemo: View {
     let experiment: Experiment?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -122,10 +122,9 @@ struct FlipDemo: View {
                 flipped = true
                 return
             }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1.8))
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) { flipped.toggle() }
-            }
+            // 1 回だけめくって止まる（くり返す動きは置かない）
+            try? await Task.sleep(for: .seconds(1.2))
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) { flipped = true }
         }
     }
 }
