@@ -56,7 +56,7 @@ struct PaywallView: View {
                     .padding(.bottom, Space.s)
                     .frame(maxWidth: 520)
                     .frame(maxWidth: .infinity)
-                    .background(Palette.ground.opacity(0.96).ignoresSafeArea(edges: .bottom))
+                    .background(Palette.ground.ignoresSafeArea(edges: .bottom))
                     .overlay(alignment: .top) {
                         Rectangle().fill(Palette.line).frame(height: 0.6)
                     }
