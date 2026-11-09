@@ -1,0 +1,18 @@
+{
+  "_doc": "App 内課金の商品。asc.yml の products で App Store Connect に作る。productId は Bundle ID（project.yml）で始める。price は円。形と値段の理由は README の「課金」に書く。type は NON_CONSUMABLE か AUTO_RENEWABLE（消耗型は作らない）。審査用の画像は docs/iap/ に置く。",
+  "products": [
+    {
+      "type": "NON_CONSUMABLE",
+      "productId": "com.enludus.daily.002.pro",
+      "referenceName": "Pro",
+      "price": 600,
+      "familySharable": true,
+      "reviewNote": "Pro（買い切り）を買うと、実験を 3 つ同時に進められ、追加の実験の型 24 個、同じ実験を 2 回以上ためした結果を合わせた判定、記録の CSV 書き出しが使えます。課金の画面は「設定」タブの「Pro を見る」から開けます（実験の結果カードを手に入れた直後、無料の上限に届いたときにも表示）。",
+      "reviewScreenshot": "docs/iap/paywall.png",
+      "localizations": [
+        {"locale": "ja", "name": "じぶん実験室 Pro", "description": "3 つ同時の実験・追加の型 24・追試の判定・書き出し"},
+        {"locale": "en-US", "name": "Self Lab Pro", "description": "3 parallel tests, 24 templates, replication"}
+      ]
+    }
+  ]
+}

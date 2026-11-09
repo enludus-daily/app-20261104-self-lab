@@ -23,5 +23,7 @@ jobs:
       test-destination: "platform=iOS Simulator,name=iPhone Duo,OS=27.1"
       screenshot-device: iPhone Duo
       # 撮る画面（アプリが起動引数 -screenshotScene <名前> で開く画面。@dark でダークモード）。手順書 9.5
-      screenshot-scenes: launch home reveal checkin detail chance share ended compose catalog settings empty home@dark detail@dark
+      screenshot-scenes: launch home deck reveal verdict collection card lab detail checkin compose catalog paywall settings empty onboarding home@dark collection@dark card@dark
+      # iPhone Duo を開いた姿勢で撮る（内側の大きな画面 display3 を撮るため。効かない Xcode では警告だけ）
+      screenshot-posture: open
       guard-disabled: ${{ vars.DAILY_GUARD_DISABLED == 'true' && 'true' || 'false' }}

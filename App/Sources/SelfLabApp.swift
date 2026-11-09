@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct SelfLabApp: App {
     @State private var store: ExperimentStore
+    @State private var purchases: PurchaseStore
     @AppStorage("appearance") private var appearance = 0
     private let designer: any ExperimentDesigner = OnDeviceDesigner()
 
@@ -13,13 +14,16 @@ struct SelfLabApp: App {
         } else {
             _store = State(initialValue: ExperimentStore())
         }
+        _purchases = State(initialValue: PurchaseStore.live())
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView(designer: designer)
                 .environment(store)
+                .environment(purchases)
                 .preferredColorScheme(Appearance.scheme(appearance))
+                .task { await purchases.load() }
         }
     }
 }

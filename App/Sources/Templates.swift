@@ -2,7 +2,7 @@ import Foundation
 
 /// 実験の型の分類
 enum TemplateCategory: String, Codable, CaseIterable, Sendable, Identifiable {
-    case sleep, morning, focus, mood, move, digital, home
+    case sleep, morning, focus, mood, move, digital, home, study, people
 
     var id: String { rawValue }
 
@@ -15,6 +15,8 @@ enum TemplateCategory: String, Codable, CaseIterable, Sendable, Identifiable {
         case .move: "体を動かす"
         case .digital: "デジタル習慣"
         case .home: "暮らし"
+        case .study: "勉強・仕事"
+        case .people: "人と休日"
         }
     }
 
@@ -27,6 +29,8 @@ enum TemplateCategory: String, Codable, CaseIterable, Sendable, Identifiable {
         case .move: "figure.walk"
         case .digital: "iphone"
         case .home: "house"
+        case .study: "graduationcap"
+        case .people: "person.2"
         }
     }
 }
@@ -50,6 +54,10 @@ struct ExperimentTemplate: Codable, Equatable, Identifiable, Sendable {
     var nextMorning: Bool
     var symbol: String
     var keywords: [String]
+    /// Pro の追加の型（古い JSON には無いので Optional）
+    var pro: Bool?
+
+    var isPro: Bool { pro == true }
 
     var draft: ExperimentDraft {
         ExperimentDraft(
@@ -77,6 +85,9 @@ enum TemplateLibrary {
         guard let id else { return nil }
         return all.first { $0.id == id }
     }
+
+    static var freeCount: Int { all.filter { !$0.isPro }.count }
+    static var proCount: Int { all.filter(\.isPro).count }
 
     static func templates(in category: TemplateCategory?) -> [ExperimentTemplate] {
         guard let category else { return all }

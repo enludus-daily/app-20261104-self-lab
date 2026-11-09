@@ -55,6 +55,10 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
     var nextMorning = false
     /// もとにした型（App/Resources/templates.json の id）
     var templateID: String?
+    /// 始める前の予想（思い込み）。結果と比べて「予想どおり」「思い込みだった」を出す。古い保存には無いので Optional
+    var prediction: Prediction?
+    /// 結果発表（けさの開封で、カードを手に入れる場面）を見たか。古い保存には無いので Optional
+    var announced: Bool?
 
     /// 記録が何日ずれるか（翌朝に記録する実験は 1）
     var recordLag: Int { nextMorning ? 1 : 0 }
@@ -100,6 +104,29 @@ struct Experiment: Codable, Equatable, Identifiable, Sendable {
         guard last >= 0 else { return [] }
         let recorded = Set(checkIns.map(\.day))
         return (0...last).reversed().filter { !recorded.contains($0) }
+    }
+}
+
+/// 始める前の予想
+enum Prediction: String, Codable, Sendable, CaseIterable, Identifiable {
+    case works, unsure, doesNotWork
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .works: "きっと効く"
+        case .unsure: "半信半疑"
+        case .doesNotWork: "効かないと思う"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .works: "hand.thumbsup"
+        case .unsure: "questionmark"
+        case .doesNotWork: "hand.thumbsdown"
+        }
     }
 }
 

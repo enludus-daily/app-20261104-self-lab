@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 記録：質問に 1〜5 で答える。選んだ数字に鉛筆の丸が描かれ、くじのとおりにできたかを残す
+/// 記録：質問に 1〜5 で答える。選んだ数字を細い輪が囲み、くじのとおりにできたかを残す
 struct CheckInSheet: View {
     let experiment: Experiment
     let day: Int
@@ -29,7 +29,7 @@ struct CheckInSheet: View {
         let swatch = Palette.swatch(for: arm)
         NavigationStack {
             ScrollView {
-                NotebookPage {
+                Panel {
                     VStack(alignment: .leading, spacing: Space.l) {
                         HStack(spacing: Space.s) {
                             TagText(text: experiment.nextMorning ? "\(day + 1) 日目の翌朝" : "\(day + 1) 日目の夜", color: Palette.ink)
@@ -62,7 +62,7 @@ struct CheckInSheet: View {
                         }
                         .tint(swatch.deep)
                         if !followed {
-                            Text("くじのとおりにできなかった日は、斜線のマスになり、比べるのから外します。正直に残すほど結果が確かになります。")
+                            Text("くじのとおりにできなかった日は、輪だけの点になり、比べるのから外します。正直に残すほど結果が確かになります。")
                                 .font(.caption)
                                 .foregroundStyle(Palette.inkSoft)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -71,8 +71,8 @@ struct CheckInSheet: View {
                         TextField("ひとことメモ（なくてよい）", text: $note, axis: .vertical)
                             .lineLimit(1...3)
                             .padding(Space.m)
-                            .background(Palette.label)
-                            .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Palette.line, lineWidth: 1))
+                            .background(Palette.field)
+                            .overlay(RoundedRectangle(cornerRadius: Radius.tile).strokeBorder(Palette.line, lineWidth: 0.6))
                             .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
 
                         if rating == nil && failures > 0 {
@@ -84,14 +84,14 @@ struct CheckInSheet: View {
                         Button(action: save) {
                             Label(saved ? "記録しました" : "記録する", systemImage: saved ? "checkmark" : "pencil")
                         }
-                        .buttonStyle(StampButtonStyle(swatch: swatch))
+                        .buttonStyle(PrimaryButtonStyle(swatch: swatch))
                         .disabled(saved)
                     }
                 }
                 .padding(Space.l)
                 .padding(.top, Space.l)
             }
-            .background(Palette.desk.ignoresSafeArea())
+            .background(Palette.ground.ignoresSafeArea())
             .navigationTitle(experiment.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -121,7 +121,7 @@ struct CheckInSheet: View {
                         Text("\(value)")
                             .font(.system(.title, design: .serif).weight(.regular).monospacedDigit())
                             .foregroundStyle(selected ? swatch.deep : Palette.ink)
-                        // 鉛筆の丸（trim で描く）
+                        // 選んだ数字を、細い輪がなぞって囲む（trim で描く）
                         Ellipse()
                             .trim(from: 0, to: selected ? 1 : 0)
                             .stroke(swatch.deep, style: StrokeStyle(lineWidth: 1.2, lineCap: .round))

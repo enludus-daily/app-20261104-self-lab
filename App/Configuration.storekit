@@ -1,0 +1,30 @@
+{
+  "identifier" : "5E1F0A2B",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [
+    {
+      "displayPrice" : "600.0",
+      "familyShareable" : true,
+      "internalID" : "6A5D2C11",
+      "localizations" : [
+        {
+          "description" : "3 つ同時の実験・追加の型 24・追試の判定・書き出し",
+          "displayName" : "じぶん実験室 Pro",
+          "locale" : "ja"
+        }
+      ],
+      "productID" : "com.enludus.daily.002.pro",
+      "referenceName" : "Pro",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_locale" : "ja_JP",
+    "_storefront" : "JPN"
+  },
+  "subscriptionGroups" : [ ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

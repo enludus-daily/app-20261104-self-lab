@@ -41,7 +41,7 @@ final class ExperimentStore {
 
     /// 新しい実験を、今日を 1 日目として始める
     @discardableResult
-    func start(_ draft: ExperimentDraft, duration: Int = Experiment.defaultDuration, now: Date = .now, seed: UInt64 = UInt64.random(in: 1...UInt64.max)) -> UUID? {
+    func start(_ draft: ExperimentDraft, duration: Int = Experiment.defaultDuration, prediction: Prediction? = nil, now: Date = .now, seed: UInt64 = UInt64.random(in: 1...UInt64.max)) -> UUID? {
         guard let cleaned = DraftCleaner.clean(draft) else { return nil }
         let experiment = Experiment(
             title: cleaned.title, action: cleaned.action, question: cleaned.question,
@@ -50,7 +50,8 @@ final class ExperimentStore {
             duration: Experiment.durations.contains(duration) ? duration : Experiment.defaultDuration,
             seed: seed,
             nextMorning: cleaned.nextMorning,
-            templateID: cleaned.templateID
+            templateID: cleaned.templateID,
+            prediction: prediction
         )
         experiments.append(experiment)
         save()
@@ -92,7 +93,19 @@ final class ExperimentStore {
             title: old.title, action: old.action, question: old.question, lowLabel: old.lowLabel, highLabel: old.highLabel,
             reason: old.reason, source: .manual, nextMorning: old.nextMorning, templateID: old.templateID
         )
-        return start(draft, duration: old.duration, now: now, seed: seed)
+        return start(draft, duration: old.duration, prediction: old.prediction, now: now, seed: seed)
+    }
+
+    /// 結果発表を見た（カードを手に入れた）
+    func announce(id: UUID) {
+        guard let index = experiments.firstIndex(where: { $0.id == id }), experiments[index].announced != true else { return }
+        experiments[index].announced = true
+        save()
+    }
+
+    /// 同じ型の、終わった実験（追試の判定に使う）
+    func finishedRuns(templateID: String, now: Date = .now) -> [Experiment] {
+        finished(now: now).filter { $0.templateID == templateID }
     }
 
     func endEarly(id: UUID) {
@@ -138,6 +151,7 @@ enum Samples {
     static let finishedSeed: UInt64 = 20_261_104
     static let endedSeed: UInt64 = 5_551_104
     static let activeSeed: UInt64 = 7_771_104
+    static let mythSeed: UInt64 = 3_331_104
 
     private static func base(_ id: String, start: Date, duration: Int, seed: UInt64) -> Experiment? {
         guard let t = TemplateLibrary.template(id: id) else { return nil }
@@ -173,7 +187,22 @@ enum Samples {
                 finished.checkIns.append(CheckIn(day: d, rating: rating, followed: d != 9, note: "", recordedAt: recordedAt))
                 finished.revealedDays.append(d)
             }
+            finished.prediction = .works
+            finished.announced = true
             result.append(finished)
+        }
+
+        // 1b. 思い込みだった実験（起きたらまず水 → 差なし。予想は「きっと効く」）
+        if var myth = base("morning-water", start: day(-50), duration: 8, seed: mythSeed) {
+            let ratings = [3, 4, 3, 3, 4, 3, 4, 3]
+            for d in 0..<8 {
+                let recordedAt = calendar.date(byAdding: .hour, value: 21, to: myth.date(ofDay: d, calendar: calendar)) ?? today
+                myth.checkIns.append(CheckIn(day: d, rating: ratings[d], followed: true, note: "", recordedAt: recordedAt))
+                myth.revealedDays.append(d)
+            }
+            myth.prediction = .works
+            myth.announced = true
+            result.append(myth)
         }
 
         // 2. 途中でやめた実験（白黒表示 → 6 日でやめた）
@@ -185,6 +214,7 @@ enum Samples {
                 ended.revealedDays.append(d)
             }
             ended.endedEarly = true
+            ended.announced = true
             result.append(ended)
         }
 
@@ -196,6 +226,7 @@ enum Samples {
                 active.checkIns.append(CheckIn(day: d, rating: rating, followed: true, note: "", recordedAt: recordedAt))
             }
             active.revealedDays = [0, 1, 2]
+            active.prediction = .unsure
             result.append(active)
         }
         return result

@@ -177,11 +177,6 @@ struct WordingTests {
         #expect(DetailText.status(experiment: e, finished: true, today: nil, result: empty, now: day(4), calendar: tokyo).contains("途中で終えた"))
     }
 
-    @Test func verticalSpineTitle() {
-        #expect(NotebookSpine.verticalTitle("昼食 歩く") == "昼\n食\n歩\nく")
-        #expect(NotebookSpine.verticalTitle("寝る1時間前にスマホを置く").hasSuffix("…"))
-    }
-
     @Test func labNotesAreManyAndStable() {
         #expect(LabNotes.all.count >= 30)
         #expect(Set(LabNotes.all).count == LabNotes.all.count)
@@ -282,6 +277,10 @@ struct DraftTests {
 struct TemplateLibraryTests {
     @Test func hasAtLeastFortyTemplates() {
         #expect(TemplateLibrary.all.count >= 40)
+        #expect(TemplateLibrary.freeCount == 42)
+        #expect(TemplateLibrary.proCount == 24)
+        let proTemplates = TemplateLibrary.all.filter { $0.isPro }
+        #expect(proTemplates.allSatisfy { $0.category == .study || $0.category == .people })
     }
 
     @Test func idsAreUnique() {
@@ -352,8 +351,8 @@ struct DesignerTests {
 struct StoreTests {
     @Test func seedsSamplesOnce() {
         let store = makeStore(seedSamples: true)
-        #expect(store.experiments.count == 3)
-        #expect(store.finished(now: day(4)).count == 2)
+        #expect(store.experiments.count == 4)
+        #expect(store.finished(now: day(4)).count == 3)
         #expect(store.active(now: day(4)).count == 1)
         let finished = store.finished(now: day(4)).first { !$0.endedEarly }
         #expect(finished.map { Analyzer.result(for: $0).verdict } == .better)
@@ -366,7 +365,7 @@ struct StoreTests {
         #expect(active.pendingDays(on: day(4), calendar: tokyo) == [3, 1])
         #expect(active.templateID == "focus-lunch-walk")
         #expect(store.streak(now: day(4)) == 1)
-        #expect(store.recordedDayCount == 22)
+        #expect(store.recordedDayCount == 30)
     }
 
     @Test func restartCopiesTheExperiment() throws {

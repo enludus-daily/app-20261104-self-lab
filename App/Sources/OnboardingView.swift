@@ -1,31 +1,32 @@
 import SwiftUI
 
-/// はじめの 3 ページ：くじ（動く見本）→ 方眼の記録 → ハンコとプライバシー
+/// はじめの 3 ページ：伏せたカードをめくる（動く見本）→ 毎朝の開封 → 結果がカードになる
 struct OnboardingView: View {
     let onFinish: () -> Void
     @State private var page = 0
+    private let samples = Samples.experiments(now: .now, calendar: .current)
 
     var body: some View {
         ZStack {
-            Palette.desk.ignoresSafeArea()
+            Palette.ground.ignoresSafeArea()
             VStack(spacing: Space.l) {
                 TabView(selection: $page) {
                     pageView(
-                        title: "思い込みを、実験に。",
-                        text: "「スマホを置くと朝がすっきりする気がする」。その「気がする」を確かめます。毎朝おみくじの筒を振って、今日が「やる日」か「やすむ日」かを決めます。",
-                        art: AnyView(OmikujiDemo().frame(height: 250))
+                        title: "思い込みを、カードにする。",
+                        text: "「スマホを置くと朝がすっきりする気がする」。その「気がする」を確かめます。毎朝カードをめくると、きょうが「やる日」か「やすむ日」かが出ます。",
+                        art: AnyView(FlipDemo(experiment: samples.first { !$0.isFinished(on: .now, calendar: .current) }))
                     )
                     .tag(0)
                     pageView(
-                        title: "方眼のノートに、1 日 1 つの点数。",
-                        text: "夜（または翌朝）に、決めた質問へ 1〜5 で答えるだけ。やる日は朱、やすむ日は藍のマスが埋まっていきます。",
-                        art: AnyView(sampleTable)
+                        title: "記録すると、あすのカードが増える。",
+                        text: "夜（または翌朝）に、決めた質問へ 1〜5 で答えるだけ。けさの開封で、きのうの記録・集まった証拠・きょうのくじを 1 枚ずつめくります。",
+                        art: AnyView(DeckStack(count: 3, width: 140, caption: "3 枚").frame(height: 230))
                     )
                     .tag(1)
                     pageView(
-                        title: "8〜14 日後、ハンコが押されます。",
-                        text: "やる日とやすむ日をくらべて、「効果あり」「差は小さい」を、偶然の確率と一緒に言葉で出します。記録は iPhone の中だけ。外には送りません。",
-                        art: AnyView(Hanko(verdict: .better, size: 170).popIn().frame(height: 250))
+                        title: "最後の日、結果発表。",
+                        text: "くじを全部の組み合わせで入れ替えてくらべ、「効いた」「思い込みだった」「逆効果」のカードにします。★は証拠の強さ。記録は iPhone の中だけです。",
+                        art: AnyView(resultCards)
                     )
                     .tag(2)
                 }
@@ -50,7 +51,7 @@ struct OnboardingView: View {
                 } label: {
                     Text(page < 2 ? "次へ" : "はじめる")
                 }
-                .buttonStyle(StampButtonStyle())
+                .buttonStyle(PrimaryButtonStyle())
                 .padding(.horizontal, Space.xl)
                 .haptic(.selection, trigger: page)
 
@@ -59,44 +60,72 @@ struct OnboardingView: View {
                     .foregroundStyle(Palette.inkSoft)
                     .frame(minHeight: 44)
             }
-            .padding(.vertical, Space.xl)
+            .padding(.vertical, Space.l)
             .frame(maxWidth: 560)
         }
     }
 
-    private var sampleTable: some View {
-        let sample = Samples.experiments(now: .now, calendar: .current).first { !$0.endedEarly && $0.checkIns.count > 10 }
-        return Group {
-            if let sample {
-                RecordTable(experiment: sample, today: nil)
-                    .frame(maxWidth: 260)
-                    .padding(Space.l)
-                    .background(Palette.paper)
-                    .clipShape(RoundedRectangle(cornerRadius: Radius.page, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: Radius.page, style: .continuous).strokeBorder(Palette.line, lineWidth: 0.6))
+    private var resultCards: some View {
+        let cards = samples.filter { $0.isFinished(on: .now, calendar: .current) }.compactMap(CardRules.card(for:))
+        return ZStack {
+            ForEach(Array(cards.prefix(2).enumerated()), id: \.element.id) { offset, card in
+                CardFace(card: card, width: 128)
+                    .rotationEffect(.degrees(offset == 0 ? 6 : -6))
+                    .offset(x: offset == 0 ? 52 : -52)
+                    .liftedShadow()
             }
         }
-        .frame(height: 250)
+        .frame(height: 230)
     }
 
     private func pageView(title: String, text: String, art: AnyView) -> some View {
-        VStack(spacing: Space.xl) {
+        VStack(spacing: Space.l) {
             Spacer(minLength: 0)
             art
-            NotebookPage {
-                VStack(alignment: .leading, spacing: Space.m) {
-                    Text(title)
-                        .font(Typo.title(.title2))
-                        .foregroundStyle(Palette.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(text)
-                        .font(.subheadline)
-                        .foregroundStyle(Palette.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text(title)
+                    .font(Typo.title(.title2))
+                    .foregroundStyle(Palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(text)
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.xl)
             Spacer(minLength: 0)
+        }
+    }
+}
+
+/// オンボーディングの動く見本：伏せたカードが、くり返しめくれる
+struct FlipDemo: View {
+    let experiment: Experiment?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var flipped = false
+
+    var body: some View {
+        Group {
+            if let experiment {
+                FlipCard(flipped: flipped) {
+                    LotFace(experiment: experiment, day: 3, width: 150)
+                } back: {
+                    CardBack(width: 150, label: "きょうのくじ")
+                }
+                .liftedShadow()
+            }
+        }
+        .frame(height: 230)
+        .task {
+            guard !reduceMotion else {
+                flipped = true
+                return
+            }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1.8))
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) { flipped.toggle() }
+            }
         }
     }
 }
